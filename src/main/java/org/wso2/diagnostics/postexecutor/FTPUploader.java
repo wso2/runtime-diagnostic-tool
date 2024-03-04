@@ -47,7 +47,6 @@ public class FTPUploader {
      *
      * @param zipFilePath zip file path
      * @param zipFileName zip file name
-     * @throws Exception throw an exception
      */
     public void uploadFile(String zipFilePath, String zipFileName) {
         String ftpServer = "";

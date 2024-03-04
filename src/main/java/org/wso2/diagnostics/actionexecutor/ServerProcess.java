@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 /**
  * Class used to represent the java process of wso2 server.
@@ -63,18 +62,16 @@ public class ServerProcess {
     /**
      * Setter method for processId.
      *
-     * @param path
+     * @param path wso2carbon.pid file path
      */
     public static void setProcessId(String path) {
-        RandomAccessFile file;
         processFilePath = path;
         String appHome = System.getProperty(Constants.APP_HOME);
         if (!appHome.endsWith(File.separator)) {
             appHome = appHome + File.separator;
         }
-        try {
+        try (RandomAccessFile file = new RandomAccessFile(appHome + path, "r")) {
             // read the process id from the wso2carbon.pid file
-            file = new RandomAccessFile(appHome + path, "r");
             processId = file.readLine();
             log.info("Server Process ID: " + processId);
         } catch (IOException e) {

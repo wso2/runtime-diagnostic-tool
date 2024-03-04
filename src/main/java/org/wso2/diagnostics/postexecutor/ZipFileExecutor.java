@@ -57,7 +57,9 @@ public class ZipFileExecutor {
     }
 
     /**
-     * Zip the folder and upload the zip file to FTP/SFTP server if configured.
+     * This method is used to zip the folder and upload the zip file to FTP/SFTP server if configured.
+     *
+     * @param path path of the folder to be zipped
      */
     public void execute(String path) {
         log.info("Zipping the folder at " + path);
