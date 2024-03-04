@@ -29,12 +29,12 @@
     <connection>scm:git:https://github.com/wso2/diagnostics-tool.git</connection>
     <developerConnection>scm:git:https://github.com/wso2/diagnostics-tool.git</developerConnection>
     <url>https://github.com/wso2/diagnostics-tool.git</url>
-    <tag>v1.0.1</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <groupId>org.wso2.diagnostics</groupId>
   <artifactId>runtime-diagnostics</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2-SNAPSHOT</version>
 
   <name>WSO2 Runtime Diagnostics Tool</name>
   <description>Diagnostics tool for data collection during error scenario</description>
