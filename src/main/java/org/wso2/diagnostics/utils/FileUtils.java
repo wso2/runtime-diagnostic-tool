@@ -66,7 +66,6 @@ public class FileUtils {
      *
      * @param srcFolder   file which needed to zip.
      * @param destZipFile destination path of zip folder.
-     * @throws Exception throw a exception
      */
     public static void zipFolder(String srcFolder, String destZipFile) {
 
