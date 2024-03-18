@@ -111,6 +111,9 @@ public class JmxtermExecutor {
                 e.printStackTrace();
             }
         }
+        if (max == 0) {
+            return "";
+        }
         // return percentage
         return String.valueOf((used * 100) / max);
     }
