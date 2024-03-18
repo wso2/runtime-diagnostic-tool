@@ -32,8 +32,8 @@
     <tag>HEAD</tag>
   </scm>
 
-  <groupId>org.wso2.diagnostics</groupId>
-  <artifactId>runtime-diagnostics</artifactId>
+  <groupId>org.wso2.runtime.diagnostics</groupId>
+  <artifactId>runtime-diagnostics-tool</artifactId>
   <version>1.0.7-SNAPSHOT</version>
 
   <name>WSO2 Runtime Diagnostics Tool</name>
