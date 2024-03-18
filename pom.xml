@@ -34,7 +34,7 @@
 
   <groupId>org.wso2.runtime.diagnostics</groupId>
   <artifactId>runtime-diagnostics-tool</artifactId>
-  <version>1.0.7-SNAPSHOT</version>
+  <version>1.0.8-SNAPSHOT</version>
 
   <name>WSO2 Runtime Diagnostics Tool</name>
   <description>Diagnostics tool for data collection during error scenario</description>
