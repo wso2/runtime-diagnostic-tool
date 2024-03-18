@@ -26,9 +26,9 @@
   </parent>
 
   <scm>
-    <connection>scm:git:https://github.com/wso2/diagnostics-tool.git</connection>
-    <developerConnection>scm:git:https://github.com/wso2/diagnostics-tool.git</developerConnection>
-    <url>https://github.com/wso2/diagnostics-tool.git</url>
+    <connection>scm:git:https://github.com/wso2/runtime-diagnostic-tool.git</connection>
+    <developerConnection>scm:git:https://github.com/wso2/runtime-diagnostic-tool.git</developerConnection>
+    <url>https://github.com/wso2/runtime-diagnostic-tool.git</url>
     <tag>HEAD</tag>
   </scm>
 
