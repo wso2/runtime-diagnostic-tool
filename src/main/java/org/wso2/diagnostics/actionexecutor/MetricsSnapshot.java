@@ -20,13 +20,13 @@ package org.wso2.diagnostics.actionexecutor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.wso2.diagnostics.utils.JmxtermExecutor;
+import org.wso2.diagnostics.utils.JMXDataRetriever;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static org.wso2.diagnostics.utils.JmxtermExecutor.getAttributeValue;
+import static org.wso2.diagnostics.utils.JMXDataRetriever.getAttributeValue;
 
 public class MetricsSnapshot implements ActionExecutor {
     private static final Logger log = LogManager.getLogger(MetricsSnapshot.class);
@@ -68,8 +68,8 @@ public class MetricsSnapshot implements ActionExecutor {
         String metrics = "";
         metrics += "Server Metrics\n";
         metrics += "==============\n";
-        metrics += "Memory Usage: " + JmxtermExecutor.getMemoryUsage(pid) + "%\n";
-        metrics += "CPU Usage: " + JmxtermExecutor.getCpuUsage(pid) + "%\n";
+        metrics += "Memory Usage: " + JMXDataRetriever.getMemoryUsage(pid) + "%\n";
+        metrics += "CPU Usage: " + JMXDataRetriever.getCpuUsage(pid) + "%\n";
         metrics += "\n";
 
         metrics += "Http Listener Metrics\n";
@@ -122,42 +122,42 @@ public class MetricsSnapshot implements ActionExecutor {
 
         metrics += "Http Listener RequestMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("http-listener", pid, "RequestSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("http-listener", pid, "RequestSizesMap");
         metrics += "\n";
 
         metrics += "Http Listener ResponseMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("http-listener", pid, "ResponseSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("http-listener", pid, "ResponseSizesMap");
         metrics += "\n";
 
         metrics += "Https Listener RequestMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("https-listener", pid, "RequestSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("https-listener", pid, "RequestSizesMap");
         metrics += "\n";
 
         metrics += "Https Listener ResponseMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("https-listener", pid, "ResponseSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("https-listener", pid, "ResponseSizesMap");
         metrics += "\n";
 
         metrics += "Http Sender RequestMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("http-sender", pid, "RequestSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("http-sender", pid, "RequestSizesMap");
         metrics += "\n";
 
         metrics += "Http Sender ResponseMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("http-sender", pid, "ResponseSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("http-sender", pid, "ResponseSizesMap");
         metrics += "\n";
 
         metrics += "Https Sender RequestMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("https-sender", pid, "RequestSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("https-sender", pid, "RequestSizesMap");
         metrics += "\n";
 
         metrics += "Https Sender ResponseMap\n";
         metrics += "==============\n";
-        metrics += JmxtermExecutor.getMessageSizes("https-sender", pid, "ResponseSizesMap");
+        metrics += JMXDataRetriever.getAttributeValue("https-sender", pid, "ResponseSizesMap");
         metrics += "\n";
 
         return metrics;

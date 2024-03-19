@@ -79,12 +79,6 @@
             <destName>diagnostics</destName>
             <fileMode>744</fileMode>
         </file>
-        <file>
-            <source>./src/main/assembly/resources/cli/jmxterm-1.0.4-uber.jar</source>
-            <outputDirectory>diagnostics-tool/bin</outputDirectory>
-            <destName>jmxterm-cli.jar</destName>
-            <fileMode>744</fileMode>
-        </file>
     </files>
 
 </assembly>
