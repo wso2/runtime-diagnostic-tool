@@ -25,7 +25,7 @@ import org.wso2.diagnostics.actionexecutor.ActionExecutorFactory;
 import org.wso2.diagnostics.postexecutor.ZipFileExecutor;
 import org.wso2.diagnostics.utils.CommonUtils;
 import org.wso2.diagnostics.utils.FileUtils;
-import org.wso2.diagnostics.utils.JmxtermExecutor;
+import org.wso2.diagnostics.utils.JMXDataRetriever;
 
 /**
  * It will check the memory usage and if it is consistently above the threshold,
@@ -55,12 +55,12 @@ public class MemoryWatcher extends Thread {
                     ", retry count: " + retryCount + ", count: " + count + ", last count updated time: " +
                     lastCountUpdatedTime + ", current time: " + System.currentTimeMillis());
         }
-        double memoryUsage = JmxtermExecutor.getMemoryUsage(pid);
+        double memoryUsage = JMXDataRetriever.getMemoryUsage(pid);
         log.debug("Memory usage: " + memoryUsage + "%");
         if (memoryUsage > threshold) {
             count++;
             lastCountUpdatedTime = System.currentTimeMillis();
-            log.info("Heap usage is above threshold. Heap usage: " + memoryUsage + ", Retry count: " + count);
+            log.info("Heap usage is above threshold. Heap usage: " + memoryUsage + "%, Retry count: " + count);
         }
         if (count > retryCount) {
             log.debug("Memory usage is consistently above threshold. Executing memory watcher actions.");

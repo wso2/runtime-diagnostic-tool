@@ -25,7 +25,7 @@ import org.wso2.diagnostics.actionexecutor.ActionExecutorFactory;
 import org.wso2.diagnostics.postexecutor.ZipFileExecutor;
 import org.wso2.diagnostics.utils.CommonUtils;
 import org.wso2.diagnostics.utils.FileUtils;
-import org.wso2.diagnostics.utils.JmxtermExecutor;
+import org.wso2.diagnostics.utils.JMXDataRetriever;
 
 /**
  * It will check the CPU usage and if it is consistently above the threshold,
@@ -55,10 +55,10 @@ public class CPUWatcher extends Thread {
                     ", retry count: " + retryCount + ", count: " + count + ", last count updated time: " +
                     lastCountUpdatedTime + ", current time: " + System.currentTimeMillis());
         }
-        int cpuUsage = JmxtermExecutor.getCpuUsage(pid);
+        int cpuUsage = JMXDataRetriever.getCpuUsage(pid);
         log.debug("CPU usage: " + cpuUsage + "%");
         if (cpuUsage > threshold) {
-            log.info("CPU usage is above threshold. CPU usage: " + cpuUsage + ", Retry count: " + count);
+            log.info("CPU usage is above threshold. CPU usage: " + cpuUsage + "%, Retry count: " + count);
             count++;
             lastCountUpdatedTime = System.currentTimeMillis();
         }

@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.wso2.diagnostics.utils.ConfigMapHolder;
 import org.wso2.diagnostics.utils.Constants;
-import org.wso2.diagnostics.utils.JmxtermExecutor;
+import org.wso2.diagnostics.utils.JMXDataRetriever;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -55,19 +55,19 @@ public class TrafficAnalyzer implements Runnable {
             log.debug("Traffic analyzer thread executing for pid: " + pid + ", attribute: " + attribute +
                     ", delay: " + delay + ", delay counter: " + delayCounter + ", last notification: " + lastNotification);
         }
-        int newHttpListenerAttributeValue = JmxtermExecutor.getAttributeValue("http-listener", pid, attribute);
+        int newHttpListenerAttributeValue = JMXDataRetriever.getIntAttributeValue("http-listener", pid, attribute);
         needToAlert(httpListenerValue, newHttpListenerAttributeValue, "http-listener");
         httpListenerValue = newHttpListenerAttributeValue;
 
-        int newHttpsListenerAttributeValue = JmxtermExecutor.getAttributeValue("https-listener", pid, attribute);
+        int newHttpsListenerAttributeValue = JMXDataRetriever.getIntAttributeValue("https-listener", pid, attribute);
         needToAlert(httpsListenerValue, newHttpsListenerAttributeValue, "https-listener");
         httpsListenerValue = newHttpsListenerAttributeValue;
 
-        int newHttpSenderAttributeValue = JmxtermExecutor.getAttributeValue("http-sender", pid, attribute);
+        int newHttpSenderAttributeValue = JMXDataRetriever.getIntAttributeValue("http-sender", pid, attribute);
         needToAlert(httpSenderValue, newHttpSenderAttributeValue, "http-sender");
         httpSenderValue = newHttpSenderAttributeValue;
 
-        int newHttpsSenderAttributeValue = JmxtermExecutor.getAttributeValue("https-sender", pid, attribute);
+        int newHttpsSenderAttributeValue = JMXDataRetriever.getIntAttributeValue("https-sender", pid, attribute);
         needToAlert(httpsSenderValue, newHttpsSenderAttributeValue, "https-sender");
         httpsSenderValue = newHttpsSenderAttributeValue;
 
