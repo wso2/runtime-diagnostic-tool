@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
@@ -36,6 +37,7 @@ import javax.management.remote.JMXServiceURL;
 
 public class JMXDataRetriever {
     private static final Logger log = LogManager.getLogger(JMXDataRetriever.class);
+    private static volatile MBeanServerConnection mBeanServerConnection;
 
     public static String getAttributeValue(String type, String pid, String attribute) {
         return getJmxData(pid, attribute, "org.apache.synapse:Name=" + type + ",Type=PassThroughConnections");
@@ -85,33 +87,55 @@ public class JMXDataRetriever {
     }
 
     public static String getJmxData(String pid, String attribute, String objectName) {
+
         try {
-            ObjectName jmxObject = new ObjectName(objectName);
-            // Find the VirtualMachineDescriptor for the target process
-            VirtualMachineDescriptor vmDescriptor = findVirtualMachineDescriptor(pid);
-            if (vmDescriptor != null) {
-                // Attach to the target process
-                VirtualMachine vm = VirtualMachine.attach(vmDescriptor);
-                try {
-                    // Get the connector address for JMX remote management
-                    String connectorAddress = vm.getAgentProperties().getProperty(
-                            "com.sun.management.jmxremote.localConnectorAddress");
-                    if (connectorAddress != null) {
-                        // Connect to the MBeanServer of the target process
-                        JMXServiceURL jmxServiceURL = new JMXServiceURL(connectorAddress);
-                        JMXConnector jmxConnector = JMXConnectorFactory.connect(jmxServiceURL);
-                        MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
-                        Object attributeObj = connection.getAttribute(jmxObject, attribute);
-                        return attributeObj.toString();
-                    }
-                } finally {
-                    vm.detach();
-                }
+            MBeanServerConnection connection = getConnection(pid);
+            if (connection != null) {
+                ObjectName mbeanName = new ObjectName(objectName);
+                return connection.getAttribute(mbeanName, attribute).toString();
             }
+        } catch (InstanceNotFoundException e) {
+            log.error("Error while getting JMX data, " + e.getMessage());
         } catch (Exception e) {
             log.error("Error while getting JMX data", e);
+            mBeanServerConnection = null;
         }
         return "";
+    }
+
+    private static MBeanServerConnection getConnection(String pid) {
+        // get connection in a synchronized way
+        if (mBeanServerConnection == null) {
+            synchronized (JMXDataRetriever.class) {
+                if (mBeanServerConnection == null) {
+                    log.debug("Creating JMX connection to the process with PID: " + pid);
+                    try {
+                        // Find the VirtualMachineDescriptor for the target process
+                        VirtualMachineDescriptor vmDescriptor = findVirtualMachineDescriptor(pid);
+                        if (vmDescriptor != null) {
+                            // Attach to the target process
+                            VirtualMachine vm = VirtualMachine.attach(vmDescriptor);
+                            try {
+                                // Get the connector address for JMX remote management
+                                String connectorAddress = vm.getAgentProperties().getProperty(
+                                        "com.sun.management.jmxremote.localConnectorAddress");
+                                if (connectorAddress != null) {
+                                    // Connect to the MBeanServer of the target process
+                                    JMXServiceURL jmxServiceURL = new JMXServiceURL(connectorAddress);
+                                    JMXConnector jmxConnector = JMXConnectorFactory.connect(jmxServiceURL);
+                                    mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+                                }
+                            } finally {
+                                vm.detach();
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("Error while getting JMX data", e);
+                    }
+                }
+            }
+        }
+        return mBeanServerConnection;
     }
 
     private static VirtualMachineDescriptor findVirtualMachineDescriptor(String pid) {
