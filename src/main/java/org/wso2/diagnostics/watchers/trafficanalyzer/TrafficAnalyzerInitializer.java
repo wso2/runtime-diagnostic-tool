@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static org.wso2.diagnostics.utils.CommonUtils.getBooleanValue;
+import static org.wso2.diagnostics.utils.CommonUtils.getIntegerValue;
+
 import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_ENABLED;
 import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_WINDOW_SIZE;
 import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_INTERVAL;
@@ -39,9 +42,7 @@ import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_ENABLED;
 import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_WINDOW_SIZE;
 import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_INTERVAL;
 import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_DELAY;
-
-import static org.wso2.diagnostics.utils.CommonUtils.getBooleanValue;
-import static org.wso2.diagnostics.utils.CommonUtils.getIntegerValue;
+import static org.wso2.diagnostics.utils.Constants.WATCHER_INITIAL_DELAY;
 
 public class TrafficAnalyzerInitializer {
 
@@ -59,8 +60,8 @@ public class TrafficAnalyzerInitializer {
             int lastSecondRequestsDelay = getIntegerValue(configMap.get(LAST_SECOND_REQUESTS_DELAY), 60);
             TrafficAnalyzer lastSecondRequests = new TrafficAnalyzer(ServerProcess.getProcessId(),
                     lastSecondRequestsWindowSize, lastSecondRequestsDelay, "LastSecondRequests");
-            globalExecutorService.scheduleAtFixedRate(lastSecondRequests, 0, lastSecondRequestsInterval,
-                    java.util.concurrent.TimeUnit.SECONDS);
+            globalExecutorService.scheduleAtFixedRate(lastSecondRequests, WATCHER_INITIAL_DELAY,
+                    lastSecondRequestsInterval, java.util.concurrent.TimeUnit.SECONDS);
             log.info("LastSecondRequests Traffic Analyzer is enabled with window size: " + lastSecondRequestsWindowSize +
                     ", interval: " + lastSecondRequestsInterval + ", delay: " + lastSecondRequestsDelay);
         }
@@ -76,7 +77,7 @@ public class TrafficAnalyzerInitializer {
                     getIntegerValue(configMap.get(LAST_FIFTEEN_SECONDS_REQUESTS_DELAY), 4);
             TrafficAnalyzer lastFifteenSecondsRequests = new TrafficAnalyzer(ServerProcess.getProcessId(),
                     lastFifteenSecondsRequestsWindowSize, lastFifteenSecondsRequestsDelay, "Last15SecondRequests");
-            globalExecutorService.scheduleAtFixedRate(lastFifteenSecondsRequests, 0,
+            globalExecutorService.scheduleAtFixedRate(lastFifteenSecondsRequests, WATCHER_INITIAL_DELAY,
                     lastFifteenSecondsRequestsInterval, java.util.concurrent.TimeUnit.SECONDS);
             log.info("LastFifteenSecondsRequests Traffic Analyzer is enabled with window size: " +
                     lastFifteenSecondsRequestsWindowSize + ", interval: " + lastFifteenSecondsRequestsInterval +
@@ -90,8 +91,8 @@ public class TrafficAnalyzerInitializer {
             int lastMinuteRequestsDelay = getIntegerValue(configMap.get(LAST_MINUTE_REQUESTS_DELAY), 1);
             TrafficAnalyzer lastMinuteRequests = new TrafficAnalyzer(ServerProcess.getProcessId(),
                     lastMinuteRequestsWindowSize, lastMinuteRequestsDelay, "LastMinuteRequests");
-            globalExecutorService.scheduleAtFixedRate(lastMinuteRequests, 0, lastMinuteRequestsInterval,
-                    java.util.concurrent.TimeUnit.SECONDS);
+            globalExecutorService.scheduleAtFixedRate(lastMinuteRequests, WATCHER_INITIAL_DELAY,
+                    lastMinuteRequestsInterval, java.util.concurrent.TimeUnit.SECONDS);
             log.info("LastMinuteRequests Traffic Analyzer is enabled with window size: " +
                     lastMinuteRequestsWindowSize + ", interval: " + lastMinuteRequestsInterval +
                     ", delay: " + lastMinuteRequestsDelay);

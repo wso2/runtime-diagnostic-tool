@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -59,6 +58,7 @@ import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_ENABLED;
 import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_INTERVAL;
 import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_RETRY_COUNT;
 import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_THRESHOLD;
+import static org.wso2.diagnostics.utils.Constants.WATCHER_INITIAL_DELAY;
 
 /**
  * Diagnostic tool launcher.
@@ -108,7 +108,8 @@ public class DiagnosticsApp {
                 ScheduledExecutorService cpuUsageExecutorService = Executors.newSingleThreadScheduledExecutor();
                 CPUWatcher cpuWatcher = new CPUWatcher(
                         ServerProcess.getProcessId(), cpuWatcherThreshold, cpuWatcherRetryCount);
-                cpuUsageExecutorService.scheduleAtFixedRate(cpuWatcher, 60, cpuWatcherInterval, SECONDS);
+                cpuUsageExecutorService.scheduleAtFixedRate(
+                        cpuWatcher, WATCHER_INITIAL_DELAY, cpuWatcherInterval, SECONDS);
             }
 
             // create memory watcher thread
@@ -123,7 +124,8 @@ public class DiagnosticsApp {
                 ScheduledExecutorService memoryUsageExecutorService = Executors.newSingleThreadScheduledExecutor();
                 MemoryWatcher memoryWatcher = new MemoryWatcher(
                         ServerProcess.getProcessId(), memoryWatcherThreshold, memoryWatcherRetryCount);
-                memoryUsageExecutorService.scheduleAtFixedRate(memoryWatcher, 60, memoryWatcherInterval, SECONDS);
+                memoryUsageExecutorService.scheduleAtFixedRate(
+                        memoryWatcher, WATCHER_INITIAL_DELAY, memoryWatcherInterval, SECONDS);
             }
 
             // start traffic analyzer

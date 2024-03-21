@@ -19,9 +19,10 @@
 package org.wso2.diagnostics.utils;
 
 public class Constants {
-    public static final String DIAGNOSTICS_LOG = "diagnostics";
+
     public static final String CONFIG_FILE_PATH = "/conf/config.toml";
     public static final String APP_HOME = "app.home";
+    public static final int WATCHER_INITIAL_DELAY = 60;
 
     // Toml file constants
     public static final String TOML_NAME_ACTION_EXECUTOR_CONFIGURATION = "action_executor_configuration";
