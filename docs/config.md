@@ -117,13 +117,13 @@ Currently, the tool supports the following watchers.
 
 #### cpu_watcher
 
-| Configuration | Description                                                                           |
-| --- |---------------------------------------------------------------------------------------|
-| enabled | Whether the watcher is enabled or not.                                                |
-| threshold | The threshold value for the CPU usage.                                                |
-| retry_count | The number of retries before triggering the action executors                          |
-| interval | The interval between each check in seconds.                                           |
-| action_executors | The action executors to be triggered when the threshold is reached. (Comma separated) |
+| Configuration | Description                                                                            |
+| --- |----------------------------------------------------------------------------------------|
+| enabled | Whether the watcher is enabled or not.                                                 |
+| threshold | The threshold value for the CPU usage.                                                 |
+| attempts | The number of attempts before triggering the action executors (This resets every hour) |
+| interval | The interval between each check in seconds.                                            |
+| action_executors | The action executors to be triggered when the threshold is reached. (Comma separated)  |
 
 Given below is a sample configuration for the cpu_watcher.
 
@@ -131,19 +131,19 @@ Given below is a sample configuration for the cpu_watcher.
 [cpu_watcher]
 enabled = "true"
 threshold = "20"
-retry_count = "2"
+attempts = "2"
 interval = "5"
 action_executors = "ThreadDumper,MetricsSnapshot,ServerInfo"
 ```
 
 #### memory_watcher
 
-| Configuration | Description                                                                           |
-| --- |---------------------------------------------------------------------------------------|
-| enabled | Whether the watcher is enabled or not.                                                |
-| threshold | The threshold value for the memory usage.                                             |
-| retry_count | The number of retries before triggering the action executors                          |
-| interval | The interval between each check in seconds.                                           |
+| Configuration    | Description                                                                           |
+|------------------|---------------------------------------------------------------------------------------|
+| enabled          | Whether the watcher is enabled or not.                                                |
+| threshold        | The threshold value for the memory usage.                                             |
+| attempts         | The number of attempts before triggering the action executors (This resets every hour)|
+| interval         | The interval between each check in seconds.                                           |
 | action_executors | The action executors to be triggered when the threshold is reached. (Comma separated) |
 
 Given below is a sample configuration for the memory_watcher.
@@ -152,7 +152,7 @@ Given below is a sample configuration for the memory_watcher.
 [memory_watcher]
 enabled = "true"
 threshold = "30"
-retry_count = "2"
+attempts = "2"
 interval = "5"
 action_executors = "ThreadDumper,MetricsSnapshot,ServerInfo"
 ```
