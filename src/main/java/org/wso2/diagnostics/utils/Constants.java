@@ -48,6 +48,10 @@ public class Constants {
     public static final String LOG_WATCHER_ENABLED = "log_watcher.enabled";
     public static final String LOG_WATCHER_INTERVAL = "log_watcher.interval";
 
+    // LogWatcher constants
+    public static final String CUSTOM_WATCHERS = "custom_watchers";
+    public static final String CUSTOM_WATCHER_CLASS = "class";
+
     // ZipExecutor constants
     public static final String ZIP_EXECUTOR_OUTPUT_DIRECTORY = "zip_file_configuration.output_directory";
     public static final String ZIP_EXECUTOR_MAX_COUNT = "zip_file_configuration.max_count";

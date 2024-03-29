@@ -20,107 +20,89 @@ package org.wso2.diagnostics.watchers.trafficanalyzer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.wso2.diagnostics.utils.ConfigMapHolder;
-import org.wso2.diagnostics.utils.Constants;
-import org.wso2.diagnostics.utils.JMXDataRetriever;
+import org.wso2.diagnostics.actionexecutor.ServerProcess;
+import org.wso2.diagnostics.watchers.Watcher;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
-public class TrafficAnalyzer implements Runnable {
+import static org.wso2.diagnostics.utils.CommonUtils.getBooleanValue;
+import static org.wso2.diagnostics.utils.CommonUtils.getIntegerValue;
 
-    private static final Logger log = LogManager.getLogger(TrafficAnalyzer.class);
-    private final SimpleMovingAverage movingAverage;
-    int httpListenerValue = 0;
-    int httpSenderValue = 0;
-    int httpsListenerValue = 0;
-    int httpsSenderValue = 0;
-    String pid;
-    String attribute;
-    int delay;
-    int delayCounter;
-    private static Instant lastNotification;
+import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_ENABLED;
+import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_WINDOW_SIZE;
+import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_INTERVAL;
+import static org.wso2.diagnostics.utils.Constants.LAST_SECOND_REQUESTS_DELAY;
+import static org.wso2.diagnostics.utils.Constants.LAST_FIFTEEN_SECONDS_REQUESTS_ENABLED;
+import static org.wso2.diagnostics.utils.Constants.LAST_FIFTEEN_SECONDS_REQUESTS_WINDOW_SIZE;
+import static org.wso2.diagnostics.utils.Constants.LAST_FIFTEEN_SECONDS_REQUESTS_INTERVAL;
+import static org.wso2.diagnostics.utils.Constants.LAST_FIFTEEN_SECONDS_REQUESTS_DELAY;
+import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_ENABLED;
+import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_WINDOW_SIZE;
+import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_INTERVAL;
+import static org.wso2.diagnostics.utils.Constants.LAST_MINUTE_REQUESTS_DELAY;
+import static org.wso2.diagnostics.utils.Constants.WATCHER_INITIAL_DELAY;
 
-    public TrafficAnalyzer(String pid, int windowSize, int delay, String attribute) {
+public class TrafficAnalyzer implements Watcher {
 
-        this.attribute = attribute;
-        this.pid = pid;
-        movingAverage = new SimpleMovingAverage(windowSize);
-        this.delay = delay;
-        delayCounter = 0;
+    private final Logger log = LogManager.getLogger(TrafficAnalyzer.class);
+
+    ScheduledExecutorService globalExecutorService;
+    Map<String, Object> configMap;
+
+    public void init(Map<String, Object> configMap) {
+
+        this.globalExecutorService = Executors.newSingleThreadScheduledExecutor();
+        this.configMap = configMap;
     }
 
-    public void run() {
-        if (log.isDebugEnabled()) {
-            log.debug("Traffic analyzer thread executing for pid: " + pid + ", attribute: " + attribute +
-                    ", delay: " + delay + ", delay counter: " + delayCounter + ", last notification: " + lastNotification);
+    public void start() {
+
+        boolean isLastSecondRequestsEnabled = getBooleanValue(configMap.get(LAST_SECOND_REQUESTS_ENABLED), false);
+        if (isLastSecondRequestsEnabled) {
+            int lastSecondRequestsWindowSize = getIntegerValue(configMap.get(LAST_SECOND_REQUESTS_WINDOW_SIZE), 300);
+            int lastSecondRequestsInterval = getIntegerValue(configMap.get(LAST_SECOND_REQUESTS_INTERVAL), 1);
+            int lastSecondRequestsDelay = getIntegerValue(configMap.get(LAST_SECOND_REQUESTS_DELAY), 60);
+            TrafficAnalyzerRunnable lastSecondRequests = new TrafficAnalyzerRunnable(ServerProcess.getProcessId(),
+                    lastSecondRequestsWindowSize, lastSecondRequestsDelay, "LastSecondRequests");
+            globalExecutorService.scheduleAtFixedRate(lastSecondRequests, WATCHER_INITIAL_DELAY,
+                    lastSecondRequestsInterval, java.util.concurrent.TimeUnit.SECONDS);
+            log.info("LastSecondRequests Traffic Analyzer is enabled with window size: " + lastSecondRequestsWindowSize +
+                    ", interval: " + lastSecondRequestsInterval + ", delay: " + lastSecondRequestsDelay);
         }
-        int newHttpListenerAttributeValue = JMXDataRetriever.getIntAttributeValue("http-listener", pid, attribute);
-        needToAlert(httpListenerValue, newHttpListenerAttributeValue, "http-listener");
-        httpListenerValue = newHttpListenerAttributeValue;
 
-        int newHttpsListenerAttributeValue = JMXDataRetriever.getIntAttributeValue("https-listener", pid, attribute);
-        needToAlert(httpsListenerValue, newHttpsListenerAttributeValue, "https-listener");
-        httpsListenerValue = newHttpsListenerAttributeValue;
-
-        int newHttpSenderAttributeValue = JMXDataRetriever.getIntAttributeValue("http-sender", pid, attribute);
-        needToAlert(httpSenderValue, newHttpSenderAttributeValue, "http-sender");
-        httpSenderValue = newHttpSenderAttributeValue;
-
-        int newHttpsSenderAttributeValue = JMXDataRetriever.getIntAttributeValue("https-sender", pid, attribute);
-        needToAlert(httpsSenderValue, newHttpsSenderAttributeValue, "https-sender");
-        httpsSenderValue = newHttpsSenderAttributeValue;
-
-    }
-
-    private void needToAlert(int oldValue, int newValue, String type) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Checking if need to alert for attribute: " + attribute + ", type: " + type +
-                    ", current Threshold: " + movingAverage.getCurrentThreshold() + ", new value: " + newValue);
+        boolean isLastFifteenSecondsRequestsEnabled =
+                getBooleanValue(configMap.get(LAST_FIFTEEN_SECONDS_REQUESTS_ENABLED), false);
+        if (isLastFifteenSecondsRequestsEnabled) {
+            int lastFifteenSecondsRequestsWindowSize =
+                    getIntegerValue(configMap.get(LAST_FIFTEEN_SECONDS_REQUESTS_WINDOW_SIZE), 100);
+            int lastFifteenSecondsRequestsInterval =
+                    getIntegerValue(configMap.get(LAST_FIFTEEN_SECONDS_REQUESTS_INTERVAL), 15);
+            int lastFifteenSecondsRequestsDelay =
+                    getIntegerValue(configMap.get(LAST_FIFTEEN_SECONDS_REQUESTS_DELAY), 4);
+            TrafficAnalyzerRunnable
+                    lastFifteenSecondsRequests = new TrafficAnalyzerRunnable(ServerProcess.getProcessId(),
+                    lastFifteenSecondsRequestsWindowSize, lastFifteenSecondsRequestsDelay, "Last15SecondRequests");
+            globalExecutorService.scheduleAtFixedRate(lastFifteenSecondsRequests, WATCHER_INITIAL_DELAY,
+                    lastFifteenSecondsRequestsInterval, java.util.concurrent.TimeUnit.SECONDS);
+            log.info("LastFifteenSecondsRequests Traffic Analyzer is enabled with window size: " +
+                    lastFifteenSecondsRequestsWindowSize + ", interval: " + lastFifteenSecondsRequestsInterval +
+                    ", delay: " + lastFifteenSecondsRequestsDelay);
         }
-        boolean doNotify = true;
-        int notifyInterval = Integer.parseInt(
-                (String) ConfigMapHolder.getInstance().getConfigMap().get(Constants.TRAFFIC_NOTIFY_INTERVAL));
-        if (lastNotification != null) {
-            Duration duration = Duration.between(lastNotification, Instant.now());
-            if (duration.getSeconds() < notifyInterval) {
-                doNotify = false;
-            }
+
+        boolean isLastMinuteRequestsEnabled = getBooleanValue(configMap.get(LAST_MINUTE_REQUESTS_ENABLED), false);
+        if (isLastMinuteRequestsEnabled) {
+            int lastMinuteRequestsWindowSize = getIntegerValue(configMap.get(LAST_MINUTE_REQUESTS_WINDOW_SIZE), 100);
+            int lastMinuteRequestsInterval = getIntegerValue(configMap.get(LAST_MINUTE_REQUESTS_INTERVAL), 60);
+            int lastMinuteRequestsDelay = getIntegerValue(configMap.get(LAST_MINUTE_REQUESTS_DELAY), 1);
+            TrafficAnalyzerRunnable lastMinuteRequests = new TrafficAnalyzerRunnable(ServerProcess.getProcessId(),
+                    lastMinuteRequestsWindowSize, lastMinuteRequestsDelay, "LastMinuteRequests");
+            globalExecutorService.scheduleAtFixedRate(lastMinuteRequests, WATCHER_INITIAL_DELAY,
+                    lastMinuteRequestsInterval, java.util.concurrent.TimeUnit.SECONDS);
+            log.info("LastMinuteRequests Traffic Analyzer is enabled with window size: " +
+                    lastMinuteRequestsWindowSize + ", interval: " + lastMinuteRequestsInterval +
+                    ", delay: " + lastMinuteRequestsDelay);
         }
-        if (this.detectAnomalies(newValue) && doNotify) {
-            lastNotification = Instant.now();
-            log.info("Attribute " +  attribute + " of type " + type + " increased more than the threshold, old value: " +
-                    oldValue + ", new value: " + newValue + ", threshold: " + movingAverage.getCurrentThreshold());
-        }
-    }
-
-    // Update EMAs for each time frame
-    public void update(int newDataPoint) {
-
-        movingAverage.update(newDataPoint);
-    }
-
-    public Double getThreshold() {
-
-        return movingAverage.getCurrentThreshold();
-    }
-
-    public Boolean detectAnomalies(int newData) {
-
-        if (newData <= 0) {
-            return Boolean.FALSE;
-        }
-        this.update(newData);
-        Double threshold = getThreshold();
-        boolean isAnomaly = newData > threshold;
-        if (isAnomaly & delayCounter == 0) {
-            delayCounter = delay;
-            return Boolean.TRUE;
-        }
-        if (delayCounter != 0) {
-            delayCounter -= 1;
-        }
-        return Boolean.FALSE;
     }
 }
