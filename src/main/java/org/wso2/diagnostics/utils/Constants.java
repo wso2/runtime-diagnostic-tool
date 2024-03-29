@@ -33,14 +33,14 @@ public class Constants {
     // cpu_watcher constants
     public static final String CPU_WATCHER_ENABLED = "cpu_watcher.enabled";
     public static final String CPU_WATCHER_THRESHOLD = "cpu_watcher.threshold";
-    public static final String CPU_WATCHER_RETRY_COUNT = "cpu_watcher.retry_count";
+    public static final String CPU_WATCHER_RETRY_COUNT = "cpu_watcher.attempts";
     public static final String CPU_WATCHER_INTERVAL = "cpu_watcher.interval";
     public static final String CPU_WATCHER_ACTION_EXECUTORS = "cpu_watcher.action_executors";
 
     // MemoryWatcher constants
     public static final String MEMORY_WATCHER_ENABLED = "memory_watcher.enabled";
     public static final String MEMORY_WATCHER_THRESHOLD = "memory_watcher.threshold";
-    public static final String MEMORY_WATCHER_RETRY_COUNT = "memory_watcher.retry_count";
+    public static final String MEMORY_WATCHER_RETRY_COUNT = "memory_watcher.attempts";
     public static final String MEMORY_WATCHER_INTERVAL = "memory_watcher.interval";
     public static final String MEMORY_WATCHER_ACTION_EXECUTORS = "memory_watcher.action_executors";
 
