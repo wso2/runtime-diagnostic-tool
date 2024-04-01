@@ -71,14 +71,19 @@ public class DiagnosticsApp {
 
         Map<String, Object> configMap;
         try {
-            // delay the start to allow read the carbon pid
-            Thread.sleep(5000);
+            // delay the start to allow read the server pid and log file path
+            Thread.sleep(30000);
             Map<String, ActionExecutor> actionExecutorMap = new HashMap<>();
             Map<String, String[]> regexMap = new LinkedHashMap<>();
             Map<String, Integer> regexPatternReloadTime = new HashMap<>();
             configMap = readConfiguration(System.getProperty(APP_HOME) + CONFIG_FILE_PATH,
                     actionExecutorMap, regexMap, regexPatternReloadTime);
             printServerInfo();
+            if (configMap.get(Constants.DIAGNOSTIC_TOOL_ENABLED) == null ||
+                    !Boolean.parseBoolean(configMap.get(Constants.DIAGNOSTIC_TOOL_ENABLED).toString())) {
+                log.info("Diagnostics tool is disabled. Hence exiting.");
+                return;
+            }
 
             String appHome = System.getProperty(Constants.APP_HOME);
             if (!appHome.endsWith(File.separator)) {

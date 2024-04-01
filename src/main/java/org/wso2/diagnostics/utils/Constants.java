@@ -53,6 +53,7 @@ public class Constants {
     public static final String ZIP_EXECUTOR_MAX_COUNT = "zip_file_configuration.max_count";
 
     // ServerInfo constants
+    public static final String DIAGNOSTIC_TOOL_ENABLED = "server_configuration.diagnostic_tool_enabled";
     public static final String DEPLOYMENT_TOML_PATH = "server_configuration.deployment_toml_path";
     public static final String LOGS_DIRECTORY = "server_configuration.logs_directory";
     public static final String UPDATES_CONFIG_PATH = "server_configuration.updates_config_path";
