@@ -6,6 +6,7 @@ Given table below is the description of the server configurations.
 
 | Configuration | Description                                         |
 | --- |-----------------------------------------------------|
+| diagnostic_tool_enabled | Whether the diagnostic tool is enabled or not.      |
 | deployment_toml_path | Path to the deployment.toml file in the WSO2 server |
 | logs_directory | Path to the logs directory.                         |
 | updates_config_path | Path to the updates config file.                    |
@@ -19,6 +20,7 @@ Given below is a sample configuration for the WSO2 Micro Integrator.
 
 ```toml
 [server_configuration]
+diagnostic_tool_enabled = "true"
 deployment_toml_path = "../conf/deployment.toml"
 logs_directory = "../repository/logs"
 updates_config_path = "../updates/config.json"

@@ -1,5 +1,6 @@
 # Server Configurations
 [server_configuration]
+diagnostic_tool_enabled = "true"
 deployment_toml_path = "../conf/deployment.toml"
 logs_directory = "../repository/logs"
 updates_config_path = "../updates/config.json"
