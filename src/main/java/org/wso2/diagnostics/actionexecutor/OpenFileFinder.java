@@ -74,7 +74,7 @@ public class OpenFileFinder implements ActionExecutor {
                 log.info("OpenFileFinder executed successfully.");
 
             } catch (IOException e) {
-                log.error("Unable to do lsof command", e);
+                log.error("Unable to do lsof command");
             }
         }
 
