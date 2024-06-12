@@ -59,6 +59,10 @@ action_executors = "ThreadDumper,MetricsSnapshot,ServerInfo"
 enabled = "true"
 interval = "0.1"
 
+# Custom Watcher Configurations
+[[custom_watchers]]
+class = "org.wso2.diagnostics.watchers.trafficanalyzer.TrafficAnalyzer"
+
 # Traffic Analyzer Configurations
 [traffic_analyzer]
 last_second_requests_enabled = "false"

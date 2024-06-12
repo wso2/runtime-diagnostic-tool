@@ -25,8 +25,8 @@ import org.wso2.diagnostics.actionexecutor.ActionExecutor;
 import org.wso2.diagnostics.actionexecutor.ActionExecutorFactory;
 import org.wso2.diagnostics.actionexecutor.ServerInfo;
 import org.wso2.diagnostics.actionexecutor.ServerProcess;
+import org.wso2.diagnostics.watchers.Watcher;
 import org.wso2.diagnostics.watchers.logwatcher.Interpreter;
-import org.wso2.diagnostics.watchers.trafficanalyzer.TrafficAnalyzerInitializer;
 import org.wso2.diagnostics.utils.ConfigMapHolder;
 import org.wso2.diagnostics.utils.Constants;
 import org.wso2.diagnostics.utils.TomlParser;
@@ -133,8 +133,8 @@ public class DiagnosticsApp {
                         memoryWatcher, WATCHER_INITIAL_DELAY, memoryWatcherInterval, SECONDS);
             }
 
-            // start traffic analyzer
-            TrafficAnalyzerInitializer.init();
+            // load custom watchers
+            loadCustomWatchers(configMap);
 
         } catch (IOException | InterruptedException e) {
             log.error("Error on starting Diagnostics tool", e);
@@ -186,4 +186,23 @@ public class DiagnosticsApp {
         Arrays.stream(serverInfo.split("\\r?\\n")).forEach(log::info);
     }
 
+    private static void loadCustomWatchers(Map<String, Object> configMap) {
+
+        // load custom watchers
+        ArrayList customWatchers = (ArrayList) configMap.get(Constants.CUSTOM_WATCHERS);
+        for (Object customWatcher : customWatchers) {
+            String watcherClass = (String) ((HashMap) customWatcher).get(Constants.CUSTOM_WATCHER_CLASS);
+
+            try {
+                Class watcher = Class.forName(watcherClass);
+                Watcher customWatcherInstance = (Watcher) watcher.newInstance();
+                customWatcherInstance.init(configMap);
+                log.info("Initiated Custom Watcher: " + watcherClass);
+                customWatcherInstance.start();
+                log.info("Started Custom Watcher: " + watcherClass);
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                log.error("Error on loading custom watcher: " + watcherClass, e);
+            }
+        }
+    }
 }
