@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General Question
+    url: https://stackoverflow.com/questions/tagged/wso2
+    about: "If you have a question then please ask on Stack Overflow using the #wso2 tag."
+  - name: Chat on WSO2 Discord Channel
+    url: https://discord.com/invite/Xa5VubmThw
+    about: "Chat about anything else with the community."
