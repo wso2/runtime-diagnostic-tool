@@ -24,12 +24,28 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import java.util.LinkedList;
+import java.util.regex.Pattern;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class LogWatcher extends Thread {
 
     private static final Logger log = LogManager.getLogger(LogWatcher.class);
+    private static final int MAX_CONTEXT_SIZE = 5;
+    private static final int MAX_POST_ERROR_CONTEXT_SIZE = 5;
+    private static final long POST_ERROR_TIMEOUT_MILLIS = 5000; // 5 seconds default timeout
+    private static final Pattern LOG_LEVEL_PATTERN = Pattern.compile("(INFO|ERROR|WARN|FATAL|DEBUG)");
+
+    /**
+     * The processing state for log collection
+     */
+    private enum ProcessingState {
+        NORMAL,             // Collecting pre-error context
+        ERROR_COLLECTING,   // Collecting error and stack trace
+        POST_ERROR_COLLECTING // Collecting post-error context
+    }
 
     /**
      * The file which will be tailed.
@@ -60,10 +76,14 @@ public class LogWatcher extends Thread {
 
     public void run() {
         try {
-
             RandomAccessFile reader = null;
             long position = 0;
-            StringBuilder logBuilder = new StringBuilder(); // To accumulate log lines
+            LinkedList<String> contextQueue = new LinkedList<>();
+            ProcessingState currentState = ProcessingState.NORMAL;
+            String errorLine = "";
+            long errorTimestamp = 0;
+            int postErrorLogLevelCount = 0;
+
             while (reader == null) {
                 try {
                     reader = new RandomAccessFile(file, "r");
@@ -78,6 +98,7 @@ public class LogWatcher extends Thread {
             }
             while (true) {
                 long fileLength = file.length();
+
                 if (fileLength < position) {
                     // File was rotated
                     log.info("Log file has been rotated. Reopening the file " + file.getPath());
@@ -86,7 +107,12 @@ public class LogWatcher extends Thread {
                         // Ensure that the old file is closed
                         closeQuietly(reader);
                         reader = new RandomAccessFile(file, "r");
-                        readLines(reader, logBuilder);
+                        ProcessingResult result = readLines(reader, contextQueue, currentState,
+                                errorLine, errorTimestamp, postErrorLogLevelCount);
+                        currentState = result.state;
+                        errorLine = result.errorLine;
+                        errorTimestamp = result.errorTimestamp;
+                        postErrorLogLevelCount = result.postErrorLogLevelCount;
                         position = 0;
                     } catch (FileNotFoundException e) {
                         log.error("Log file " + file.getPath() + " not found." , e);
@@ -95,11 +121,31 @@ public class LogWatcher extends Thread {
                 }
                 // Check if the file has been updated
                 if (fileLength > position) {
-                    readLines(reader, logBuilder);
+                    // Read new content and update state
+                    ProcessingResult result = readLines(reader, contextQueue, currentState,
+                            errorLine, errorTimestamp, postErrorLogLevelCount);
+                    currentState = result.state;
+                    errorLine = result.errorLine;
+                    errorTimestamp = result.errorTimestamp;
+                    postErrorLogLevelCount = result.postErrorLogLevelCount;
                     // Update the file length
                     position = fileLength;
                     // Move the file pointer to the end
                     reader.seek(fileLength);
+                }
+                // Check for timeout if we're in post-error collection state
+                if (currentState == ProcessingState.POST_ERROR_COLLECTING &&
+                        System.currentTimeMillis() - errorTimestamp > POST_ERROR_TIMEOUT_MILLIS) {
+
+                    log.debug("Post-error timeout reached. Processing error context.");
+                    interpreter.interpret(errorLine, contextQueue);
+
+                    // Reset state
+                    currentState = ProcessingState.NORMAL;
+                    contextQueue.clear();
+                    errorLine = "";
+                    errorTimestamp = 0;
+                    postErrorLogLevelCount = 0;
                 }
                 // Sleep for a short duration before checking for updates again
                 Thread.sleep(delay);
@@ -120,31 +166,95 @@ public class LogWatcher extends Thread {
         }
     }
 
-    private void readLines(RandomAccessFile reader, StringBuilder logBuilder) throws IOException {
+    /**
+     * Class to hold processing state results
+     */
+    private static class ProcessingResult {
+        ProcessingState state;
+        String errorLine;
+        long errorTimestamp;
+        int postErrorLogLevelCount;
 
-        // Read the new lines
+        ProcessingResult(ProcessingState state, String errorLine, long errorTimestamp, int postErrorLogLevelCount) {
+            this.state = state;
+            this.errorLine = errorLine;
+            this.errorTimestamp = errorTimestamp;
+            this.postErrorLogLevelCount = postErrorLogLevelCount;
+        }
+    }
+
+    private ProcessingResult readLines(RandomAccessFile reader, LinkedList<String> contextQueue,
+                                       ProcessingState currentState, String errorLine,
+                                       long errorTimestamp, int postErrorLogLevelCount) throws IOException {
+
         String line;
-        String errorLine = "";
+
         while ((line = reader.readLine()) != null) {
-            // Check if the line indicates the start of a stack trace
-            if (line.contains("ERROR") || line.contains("WARN")) {
-                if (logBuilder.length() == 0) {
-                    errorLine = line;
-                    logBuilder.append(line).append("\n");
-                } else {
-                    interpreter.interpret(errorLine, logBuilder.toString());
-                    logBuilder.setLength(0);
-                    errorLine = line;
-                    logBuilder.append(line).append("\n");
-                }
-            } else {
-                logBuilder.append(line).append("\n");
-            }
-            // If the logBuilder exceeds a threshold, interpret the log lines and clear the logBuilder
-            if (logBuilder.length() > 1000000) {
-                interpreter.interpret(errorLine, logBuilder.toString());
-                logBuilder.setLength(0);
+            boolean isLogLevelLine = LOG_LEVEL_PATTERN.matcher(line).find();
+
+            switch (currentState) {
+                case NORMAL:
+                    if (isLogLevelLine) {
+                        // Manage pre-error context queue
+                        if (contextQueue.size() >= MAX_CONTEXT_SIZE) {
+                            contextQueue.removeFirst();
+                        }
+                        contextQueue.add(line);
+
+                        // Check if it's an error line
+                        if (line.contains("ERROR")) {
+                            currentState = ProcessingState.ERROR_COLLECTING;
+                            errorLine = line;
+                            errorTimestamp = System.currentTimeMillis();
+                        }
+                    } else {
+                        // Non-log level line in normal state, likely a stacktrace
+                        contextQueue.add(line);
+                    }
+                    break;
+
+                case ERROR_COLLECTING:
+                    contextQueue.add(line);
+
+                    if (isLogLevelLine) {
+                        // Found a new log level line - now start collecting post-error context
+                        currentState = ProcessingState.POST_ERROR_COLLECTING;
+                        postErrorLogLevelCount = 1; // Count this as first post-error log level line
+                    }
+                    break;
+
+                case POST_ERROR_COLLECTING:
+                    contextQueue.add(line);
+
+                    if (isLogLevelLine) {
+                        postErrorLogLevelCount++;
+
+                        // Check if we've collected enough post-error log lines
+                        if (postErrorLogLevelCount >= MAX_POST_ERROR_CONTEXT_SIZE) {
+                            interpreter.interpret(errorLine, contextQueue);
+
+                            // Reset state
+                            currentState = ProcessingState.NORMAL;
+                            contextQueue.clear();
+                            errorLine = "";
+                            errorTimestamp = 0;
+                            postErrorLogLevelCount = 0;
+
+                            // Add this new log level line as first in new context queue
+                            contextQueue.add(line);
+
+                            // Check if new line is an error (starting process again)
+                            if (line.contains("ERROR")) {
+                                currentState = ProcessingState.ERROR_COLLECTING;
+                                errorLine = line;
+                                errorTimestamp = System.currentTimeMillis();
+                            }
+                        }
+                    }
+                    break;
             }
         }
+
+        return new ProcessingResult(currentState, errorLine, errorTimestamp, postErrorLogLevelCount);
     }
 }

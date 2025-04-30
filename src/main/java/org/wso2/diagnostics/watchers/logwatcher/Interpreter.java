@@ -59,23 +59,23 @@ public class Interpreter {
         timer = new Timer();
     }
 
-    public void interpret(String errorLine, String completeLog) {
-        this.diagnoseError(errorLine, completeLog);
+    public void interpret(String errorLine, LinkedList<String> contextQueue) {
+        this.diagnoseError(errorLine, contextQueue);
     }
 
     /**
      * Method used to diagnose the error.
      *
      * @param errorLine error line
-     * @param completeLog complete log
+     * @param contextQueue context queue
      */
-    private void diagnoseError(String errorLine, String completeLog) {
+    private void diagnoseError(String errorLine, LinkedList<String> contextQueue) {
         this.createFolder();
         String regexPattern = findRegexPattern(errorLine);
         String[] executorsList = regexMap.get(regexPattern);
         if (executorsList != null && this.doAnalysis(executorsList, errorLine, regexPattern)) {
             try {
-                timer.schedule(new PostExecutorTask(completeLog, folderPath), new Date(new Date().getTime() + 5000));
+                timer.schedule(new PostExecutorTask(contextQueue, folderPath), new Date(new Date().getTime() + 5000));
             } catch (Exception e) {
                 log.error("Error while scheduling the post executor task", e);
             }
