@@ -151,7 +151,6 @@ class Analysis:
     def _analyzeSynchronizers(self):
         self._mapSynchronizers()
         self._xrefSynchronizers()
-        self._sortSynchronizersRefs()
 
     def _mapSynchronizers(self):
         for thread in self.threads:
@@ -183,13 +182,6 @@ class Analysis:
             for lock in thread.locksHeld:
                 synchronizer = self.synchronizerMap[lock]
                 synchronizer.lockHolder = thread
-
-    def _sortSynchronizersRefs(self):
-        for synchronizer in self.synchronizers:
-            # synchronizer.lockWaiters.sort(key=self.threadComparator)
-            # synchronizer.notificationWaiters.sort(key=self.threadComparator)
-            #possible error
-            pass
 
     def _analyzeDeadlocks(self):
         for synchronizer in self.synchronizers:
@@ -232,6 +224,7 @@ class Analysis:
 
 class Thread:
     def __init__(self, spec):
+        # Initial property declarations
         self.spec = spec
         self.threadState = None
         self.wantNotificationOn = None
@@ -252,14 +245,6 @@ class Thread:
         
         # Initialize the object
         self._parseSpec(spec)
-
-        self.frames = []
-        self.wantNotificationOn = None
-        self.wantToAcquire = None
-        self.locksHeld = []
-        self.synchronizerClasses = {}
-        self.threadState = None
-        self.classicalLockHeld = None
 
     def isValid(self):
         return hasattr(self, 'name') and self.name is not None
@@ -286,7 +271,7 @@ class Thread:
             self.synchronizerClasses[id] = className
 
             if state == "eliminated":
-                return True  # JVM internal optimization, not sure why it's in the thread dump at all
+                return True  
             elif state in ["waiting on", "parking to wait for"]:
                 self.wantNotificationOn = id
                 return True
@@ -296,7 +281,6 @@ class Thread:
             elif state == "locked":
                 if self.wantNotificationOn == id:
                     return True  # Lock is released while waiting for the notification
-                # self._arrayAddUnique(self.locksHeld, id)
                 Util.array_add_unique(self.locksHeld, id)
                 if (len(self.frames) >= 2 and self.classicalLockHeld is None and
                     'java.lang.Object.wait' in self.frames[-2]):
@@ -337,7 +321,6 @@ class Thread:
             self.classicalLockHeld = None
 
     def getStatus(self):
-        # TODO: do not recreate every time
         return ThreadStatus(self)
 
     def _parseSpec(self, line):
