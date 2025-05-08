@@ -22,7 +22,6 @@ class Analysis:
         self._countRunningMethods()
         self._analyzeSynchronizers()
         self._analyzeDeadlocks()
-        # must sort after deadlock detection
         # self.synchronizers.sort(key=lambda x: x.compare())
 
     def _init(self):
@@ -85,7 +84,6 @@ class Analysis:
         return True
 
     def _handleLine(self, line):
-        # TODO better way of new thread detection than creating a new object
         thread = Thread(line)
         if thread.isValid():
             self.threads.append(thread)
@@ -232,7 +230,6 @@ class Analysis:
         
         return DeadlockStatus(DeadlockStatus.DEADLOCKED, [])
 
-
 class Thread:
     def __init__(self, spec):
         self.spec = spec
@@ -240,7 +237,7 @@ class Thread:
         self.wantNotificationOn = None
         self.classicalLockHeld = None
         self.name = None
-        self.tid = None  # Assuming tid is set elsewhere
+        self.tid = None  
         self.frames = []
         self.synchronizerClasses = {}
         self.wantToAcquire = None
