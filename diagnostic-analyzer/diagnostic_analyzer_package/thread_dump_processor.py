@@ -22,7 +22,6 @@ class Analysis:
         self._countRunningMethods()
         self._analyzeSynchronizers()
         self._analyzeDeadlocks()
-        # self.synchronizers.sort(key=lambda x: x.compare())
 
     def _init(self):
         self.threads = []
@@ -68,11 +67,11 @@ class Analysis:
     def _isIncompleteThreadHeader(self, line):
         if line:  # Check if the line is not empty
             if line[0] != '"':
-            # Thread headers start with ", this is not it 
+            # Thread headers start with "
                 return False
         else:
             return False
-        #possible error. check this if code misses 
+        
         if 'prio=' in line:
             # Thread header contains "prio=" => we think it's complete 
             return False
@@ -205,6 +204,7 @@ class Analysis:
         if len(sync.lockWaiters) == 0 and len(sync.notificationWaiters) == 0:
             return DeadlockStatus.NONE
         
+        #Cycle Detection
         work = []
         work.append(sync.lockHolder)
         visited = {sync.id: True}
@@ -220,7 +220,7 @@ class Analysis:
                 if synchro.lockHolder is not None:
                     work.append(synchro.lockHolder)
         
-        return DeadlockStatus(DeadlockStatus.DEADLOCKED, [])
+        return DeadlockStatus.NONE
 
 class Thread:
     def __init__(self, spec):
