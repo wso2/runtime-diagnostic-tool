@@ -28,3 +28,45 @@ replay_pid*
 
 .DS_Store
 target/
+
+# Files in Runtime-diagnostic-tool
+
+# Python bytecode
+diagnostic_analyzer_package/__pycache__/
+diagnostic_analyzer_package/**/*.py[cod]
+diagnostic_analyzer_package/**/*$py.class
+
+# Distribution / packaging
+diagnostic_analyzer_package/dist/
+diagnostic_analyzer_package/build/
+diagnostic_analyzer_package/**/*.egg-info/
+diagnostic_analyzer_package/**/*.egg
+
+# Virtual environments
+diagnostic_analyzer_package/venv/
+diagnostic_analyzer_package/env/
+diagnostic_analyzer_package/ENV/
+
+# IDE files
+diagnostic_analyzer_package/.idea/
+diagnostic_analyzer_package/.vscode/
+diagnostic_analyzer_package/**/*.swp
+diagnostic_analyzer_package/**/*.swo
+
+# OS specific files
+diagnostic_analyzer_package/.DS_Store
+diagnostic_analyzer_package/Thumbs.db
+
+# Log files
+diagnostic_analyzer_package/**/*.log
+
+# Test coverage
+diagnostic_analyzer_package/.coverage
+diagnostic_analyzer_package/htmlcov/
+
+# Temp files
+diagnostic_analyzer_package/**/*.tmp
+
+diagnostic_analyzer_package/.env
+
+diagnostic_analyzer_package/node_modules/
