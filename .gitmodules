@@ -1,0 +1,3 @@
+[submodule "Diagnostic-Analyzer/diagnostic-analyzer"]
+	path = Diagnostic-Analyzer/diagnostic-analyzer
+	url = https://github.com/damaya0/diagnostic-analyzer
