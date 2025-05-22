@@ -33,8 +33,6 @@ import org.apache.logging.log4j.Logger;
 public class LogWatcher extends Thread {
 
     private static final Logger log = LogManager.getLogger(LogWatcher.class);
-    private static final int MAX_CONTEXT_SIZE = 5;
-    private static final int MAX_POST_ERROR_CONTEXT_SIZE = 5;
     private static final long POST_ERROR_TIMEOUT_MILLIS = 5000; // 5 seconds default timeout
     private static final Pattern LOG_LEVEL_PATTERN = Pattern.compile("(INFO|ERROR|WARN|FATAL|DEBUG)");
 
@@ -59,6 +57,14 @@ public class LogWatcher extends Thread {
      * The interpreter to notify of events when tailing.
      */
     private final Interpreter interpreter;
+    /**
+     * Maximum amount of logs stored before the Error Line
+     */
+    private final int maxPreErrorContextSize;
+    /**
+     * Maximum amount of logs stored after the Error Line
+     */
+    private final int maxPostErrorContextSize;
 
     /**
      * Creates a Tailer for the given file.
@@ -66,14 +72,17 @@ public class LogWatcher extends Thread {
      * @param filepath   the file to follow.
      * @param interpreter   the TailerListener to use.
      * @param delay      the delay between checks of the file for new content in seconds.
+     * @param maxPreErrorContextSize    max log lines before the error
+     * @param maxPostErrorContextSize   max log lines after the error
      */
-    public LogWatcher(String filepath, Interpreter interpreter, double delay) {
+    public LogWatcher(String filepath, Interpreter interpreter, double delay, int maxPreErrorContextSize, int maxPostErrorContextSize) {
 
         this.file = new File(filepath);
         this.delay = Math.round(delay * 1000);
         this.interpreter = interpreter;
+        this.maxPreErrorContextSize = maxPreErrorContextSize;
+        this.maxPostErrorContextSize = maxPostErrorContextSize;
     }
-
     public void run() {
         try {
             RandomAccessFile reader = null;
@@ -196,7 +205,7 @@ public class LogWatcher extends Thread {
                 case NORMAL:
                     if (isLogLevelLine) {
                         // Manage pre-error context queue
-                        if (contextQueue.size() >= MAX_CONTEXT_SIZE) {
+                        if (contextQueue.size() >= maxPreErrorContextSize) {
                             contextQueue.removeFirst();
                         }
                         contextQueue.add(line);
@@ -230,7 +239,7 @@ public class LogWatcher extends Thread {
                         postErrorLogLevelCount++;
 
                         // Check if we've collected enough post-error log lines
-                        if (postErrorLogLevelCount >= MAX_POST_ERROR_CONTEXT_SIZE) {
+                        if (postErrorLogLevelCount >= maxPostErrorContextSize) {
                             interpreter.interpret(errorLine, contextQueue);
 
                             // Reset state

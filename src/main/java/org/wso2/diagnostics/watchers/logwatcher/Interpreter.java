@@ -70,7 +70,7 @@ public class Interpreter {
      * @param contextQueue context queue
      */
     private void diagnoseError(String errorLine, LinkedList<String> contextQueue) {
-        this.createFolder();
+        this.createFolder(errorLine);
         String regexPattern = findRegexPattern(errorLine);
         String[] executorsList = regexMap.get(regexPattern);
         if (executorsList != null && this.doAnalysis(executorsList, errorLine, regexPattern)) {
@@ -158,16 +158,23 @@ public class Interpreter {
 
     /**
      * Create folder for dump.
+     *
+     * @param errorLine The error line to include in the folder name
      */
-    public void createFolder() {
+    public void createFolder(String errorLine) {
 
         folderPath = (System.getProperty(Constants.APP_HOME) + "/temp/"); // get log file path
         File logFolder = new File(folderPath);
         if (!(logFolder.exists())) {
             logFolder.mkdir();
         }
-        // folder name set as timestamp
-        String folderName = new Timestamp(System.currentTimeMillis()).toString().replace(" ", "_");
+
+        // Clean up the errorLine to make it suitable for the folder name
+        String folderName = errorLine
+                .replaceAll("[\\\\/:*?\"<>|]", "_") // Replace illegal file characters
+                .replaceAll("\\s+", "_") // Replace whitespace with underscore
+                .substring(0, Math.min(500, errorLine.length())); // Limit length to avoid overly long folder names
+
         File dumpFolder = new File(folderPath + folderName);
         if (!dumpFolder.exists()) {
             try {

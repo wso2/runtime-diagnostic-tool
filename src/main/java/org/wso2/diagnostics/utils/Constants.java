@@ -47,6 +47,8 @@ public class Constants {
     // log_watcher constants
     public static final String LOG_WATCHER_ENABLED = "log_watcher.enabled";
     public static final String LOG_WATCHER_INTERVAL = "log_watcher.interval";
+    public static final String MAX_PRE_ERROR_CONTEXT_SIZE = "log_watcher.max_pre_error_context_size";
+    public static final String MAX_POST_ERROR_CONTEXT_SIZE = "log_watcher.max_post_error_context_size";
 
     // LogWatcher constants
     public static final String CUSTOM_WATCHERS = "custom_watchers";
