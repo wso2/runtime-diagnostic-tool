@@ -136,7 +136,6 @@ public class DiagnosticsApp {
             Map<String, Integer> regexPatternReloadTime) throws IOException {
 
         Map<String, Object> configMap = TomlParser.parse(configFilePath);
-        log("config map" + configMap.toString());
         ConfigMapHolder.getInstance().setConfigMap(configMap);
         ServerProcess.setProcessId((String) configMap.get(Constants.PROCESS_ID_PATH));
 
