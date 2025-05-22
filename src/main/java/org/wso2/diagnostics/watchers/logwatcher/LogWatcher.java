@@ -35,6 +35,7 @@ public class LogWatcher extends Thread {
     private static final Logger log = LogManager.getLogger(LogWatcher.class);
     private static final long POST_ERROR_TIMEOUT_MILLIS = 5000; // 5 seconds default timeout
     private static final Pattern LOG_LEVEL_PATTERN = Pattern.compile("(INFO|ERROR|WARN|FATAL|DEBUG)");
+    private static final int MAX_ERROR_CONTEXT_SIZE = 1000;
 
     /**
      * The processing state for log collection
@@ -223,7 +224,16 @@ public class LogWatcher extends Thread {
                     break;
 
                 case ERROR_COLLECTING:
-                    contextQueue.add(line);
+                    // Check if we've reached the maximum error context size
+                    if (contextQueue.size() >= maxPreErrorContextSize + MAX_ERROR_CONTEXT_SIZE) {
+                        log.warn("Maximum error context size reached (" + MAX_ERROR_CONTEXT_SIZE +
+                                " lines). Switching to post-error collection to prevent memory issues.");
+                        // Force transition to post-error collecting state
+                        currentState = ProcessingState.POST_ERROR_COLLECTING;
+                        postErrorLogLevelCount = 0;
+                    } else {
+                        contextQueue.add(line);
+                    }
 
                     if (isLogLevelLine) {
                         // Found a new log level line - now start collecting post-error context
@@ -231,6 +241,7 @@ public class LogWatcher extends Thread {
                         postErrorLogLevelCount = 1; // Count this as first post-error log level line
                     }
                     break;
+
 
                 case POST_ERROR_COLLECTING:
                     contextQueue.add(line);
