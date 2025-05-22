@@ -59,23 +59,23 @@ public class Interpreter {
         timer = new Timer();
     }
 
-    public void interpret(String errorLine, String completeLog) {
-        this.diagnoseError(errorLine, completeLog);
+    public void interpret(String errorLine, LinkedList<String> contextQueue) {
+        this.diagnoseError(errorLine, contextQueue);
     }
 
     /**
      * Method used to diagnose the error.
      *
      * @param errorLine error line
-     * @param completeLog complete log
+     * @param contextQueue context queue
      */
-    private void diagnoseError(String errorLine, String completeLog) {
-        this.createFolder();
+    private void diagnoseError(String errorLine, LinkedList<String> contextQueue) {
+        this.createFolder(errorLine);
         String regexPattern = findRegexPattern(errorLine);
         String[] executorsList = regexMap.get(regexPattern);
         if (executorsList != null && this.doAnalysis(executorsList, errorLine, regexPattern)) {
             try {
-                timer.schedule(new PostExecutorTask(completeLog, folderPath), new Date(new Date().getTime() + 5000));
+                timer.schedule(new PostExecutorTask(contextQueue, folderPath), new Date(new Date().getTime() + 5000));
             } catch (Exception e) {
                 log.error("Error while scheduling the post executor task", e);
             }
@@ -158,16 +158,23 @@ public class Interpreter {
 
     /**
      * Create folder for dump.
+     *
+     * @param errorLine The error line to include in the folder name
      */
-    public void createFolder() {
+    public void createFolder(String errorLine) {
 
         folderPath = (System.getProperty(Constants.APP_HOME) + "/temp/"); // get log file path
         File logFolder = new File(folderPath);
         if (!(logFolder.exists())) {
             logFolder.mkdir();
         }
-        // folder name set as timestamp
-        String folderName = new Timestamp(System.currentTimeMillis()).toString().replace(" ", "_");
+
+        // Clean up the errorLine to make it suitable for the folder name
+        String folderName = errorLine
+                .replaceAll("[\\\\/:*?\"<>|]", "_") // Replace illegal file characters
+                .replaceAll("\\s+", "_") // Replace whitespace with underscore
+                .substring(0, Math.min(500, errorLine.length())); // Limit length to avoid overly long folder names
+
         File dumpFolder = new File(folderPath + folderName);
         if (!dumpFolder.exists()) {
             try {
