@@ -254,4 +254,3 @@ def fetch_file_content(url: str) -> str:
         return decoded_content
     else:
         raise Exception(f'Failed to retrieve file: {response.json().get("message")}')
-    
