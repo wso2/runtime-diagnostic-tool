@@ -126,6 +126,8 @@ public class LogWatcher extends Thread {
                         position = 0;
                     } catch (FileNotFoundException e) {
                         log.error("Log file " + file.getPath() + " not found." , e);
+                        // sleep to avoid CPU spinning
+                        Thread.sleep(delay);
                     }
                     continue;
                 }
