@@ -10,6 +10,7 @@ process_id_path = "../wso2carbon.pid"
 #server_name = "WSO2 Server"
 #server_version = "1.0.0"
 
+
 ## Action Executor Configurations
 
 # Example
@@ -57,8 +58,6 @@ action_executors = "ThreadDumper,MetricsSnapshot,ServerInfo"
 [log_watcher]
 enabled = "true"
 interval = "0.1"
-max_pre_error_context_size = "5"
-max_post_error_context_size = "5"
 
 # Custom Watcher Configurations
 [[custom_watchers]]
@@ -123,4 +122,3 @@ reload_time = "10"
 #directory = "diagnostics"
 #known_hosts_path = "/home/user/.ssh/known_hosts"
 #strict_host_key_checking = "yes" # or "no"
-

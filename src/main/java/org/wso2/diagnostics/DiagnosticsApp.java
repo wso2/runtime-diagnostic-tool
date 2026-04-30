@@ -44,9 +44,21 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static java.rmi.server.LogStream.log;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.wso2.diagnostics.utils.Constants.*;
+
+import static org.wso2.diagnostics.utils.Constants.APP_HOME;
+import static org.wso2.diagnostics.utils.Constants.CONFIG_FILE_PATH;
+import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_ENABLED;
+import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_RETRY_COUNT;
+import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_INTERVAL;
+import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_THRESHOLD;
+import static org.wso2.diagnostics.utils.Constants.LOG_WATCHER_ENABLED;
+import static org.wso2.diagnostics.utils.Constants.LOG_WATCHER_INTERVAL;
+import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_ENABLED;
+import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_INTERVAL;
+import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_RETRY_COUNT;
+import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_THRESHOLD;
+import static org.wso2.diagnostics.utils.Constants.WATCHER_INITIAL_DELAY;
 
 /**
  * Diagnostic tool launcher.
@@ -82,11 +94,10 @@ public class DiagnosticsApp {
             boolean logWatcherEnabled = Boolean.parseBoolean(configMap.get(LOG_WATCHER_ENABLED).toString());
             if (logWatcherEnabled) {
                 double logWatcherInterval = Double.parseDouble(configMap.get(LOG_WATCHER_INTERVAL).toString());
-                int maxPreErrorContextSize = Integer.parseInt(configMap.get(MAX_PRE_ERROR_CONTEXT_SIZE).toString());
-                int maxPostErrorContextSize = Integer.parseInt(configMap.get(MAX_POST_ERROR_CONTEXT_SIZE).toString());
                 LogWatcher carbonLogTailor = new LogWatcher(appHome +
                         configMap.get(Constants.LOG_FILE_CONFIGURATION_FILE_PATH),
-                        new Interpreter(actionExecutorMap, regexMap, regexPatternReloadTime), logWatcherInterval, maxPreErrorContextSize, maxPostErrorContextSize);
+                        new Interpreter(actionExecutorMap, regexMap, regexPatternReloadTime), logWatcherInterval);
+                log.info("Listening to : " + configMap.get(Constants.LOG_FILE_CONFIGURATION_FILE_PATH));
                 carbonLogTailor.start();
             }
 
