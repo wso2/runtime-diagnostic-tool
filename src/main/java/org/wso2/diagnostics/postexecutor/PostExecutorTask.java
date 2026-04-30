@@ -21,7 +21,6 @@ package org.wso2.diagnostics.postexecutor;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.TimerTask;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,21 +30,19 @@ public class PostExecutorTask extends TimerTask {
 
     private static final Logger log = LogManager.getLogger(PostExecutorTask.class);
 
-    private final LinkedList<String> contextQueue;
+    private final String logLine;
     private final String folderPath;
 
-    public PostExecutorTask(LinkedList<String> contextQueue, String folderPath) {
+    public PostExecutorTask(String logLine, String folderPath) {
 
-        this.contextQueue = new LinkedList<>(contextQueue);
+        this.logLine = logLine;
         this.folderPath = folderPath;
     }
 
     @Override
     public void run() {
 
-        for (String logLine : contextQueue) {
-            this.writeLogLine(logLine);
-        }
+        this.writeLogLine(logLine);
         this.executeZipFileExecutor();
         this.deleteFolder();
     }
@@ -59,8 +56,8 @@ public class PostExecutorTask extends TimerTask {
     private void writeLogLine(String logLine) {
 
         try {
-            FileWriter writer = new FileWriter(folderPath + "/" + "log.txt", true);
-            writer.write(logLine + "\n");
+            FileWriter writer = new FileWriter(folderPath + "/" + "log.txt");
+            writer.write(logLine);
             writer.close();
         } catch (IOException e) {
             log.error("Error occurred while writing the log line to the file", e);
