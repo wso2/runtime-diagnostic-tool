@@ -46,22 +46,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static java.rmi.server.LogStream.log;
 import static java.util.concurrent.TimeUnit.SECONDS;
-
-import static org.wso2.diagnostics.utils.Constants.APP_HOME;
-import static org.wso2.diagnostics.utils.Constants.CONFIG_FILE_PATH;
-import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_ENABLED;
-import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_RETRY_COUNT;
-import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_INTERVAL;
-import static org.wso2.diagnostics.utils.Constants.CPU_WATCHER_THRESHOLD;
-import static org.wso2.diagnostics.utils.Constants.LOG_WATCHER_ENABLED;
-import static org.wso2.diagnostics.utils.Constants.LOG_WATCHER_INTERVAL;
-import static org.wso2.diagnostics.utils.Constants.MAX_PRE_ERROR_CONTEXT_SIZE;
-import static org.wso2.diagnostics.utils.Constants.MAX_POST_ERROR_CONTEXT_SIZE;
-import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_ENABLED;
-import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_INTERVAL;
-import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_RETRY_COUNT;
-import static org.wso2.diagnostics.utils.Constants.MEMORY_WATCHER_THRESHOLD;
-import static org.wso2.diagnostics.utils.Constants.WATCHER_INITIAL_DELAY;
+import static org.wso2.diagnostics.utils.Constants.*;
 
 /**
  * Diagnostic tool launcher.
