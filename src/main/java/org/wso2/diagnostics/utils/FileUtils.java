@@ -176,7 +176,7 @@ public class FileUtils {
     public static void rotateFiles(File directory, int maxFiles) {
 
         File[] files = directory.listFiles();
-        Arrays.sort(files, Comparator.comparing(File::getName));
+        Arrays.sort(files, Comparator.comparingLong(File::lastModified));
         int fileCount = files.length;
         if (fileCount >= maxFiles) {
             for (int i = 0; i < fileCount - maxFiles; i++) {
