@@ -179,7 +179,7 @@ public class FileUtils {
         Arrays.sort(files, Comparator.comparing(File::getName));
         int fileCount = files.length;
         if (fileCount >= maxFiles) {
-            for (int i = 0; i < fileCount - maxFiles + 1; i++) {
+            for (int i = 0; i < fileCount - maxFiles; i++) {
                 files[i].delete();
             }
         }
