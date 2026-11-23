@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
@@ -173,14 +174,28 @@ public class FileUtils {
 
     }
 
-    public static void rotateFiles(File directory, int maxFiles) {
+    public static void rotateFiles(File directory, int maxFiles, long maxTotalSize) {
 
-        File[] files = directory.listFiles();
-        Arrays.sort(files, Comparator.comparingLong(File::lastModified));
+        File[] files = directory.listFiles(file -> file.getName().endsWith(".zip")
+                && Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS));
+        if (files == null) {
+            log.warn("Unable to list diagnostic archives in {}", directory);
+            return;
+        }
+        Arrays.sort(files, Comparator.comparingLong(File::lastModified).thenComparing(File::getName));
         int fileCount = files.length;
-        if (fileCount >= maxFiles) {
-            for (int i = 0; i < fileCount - maxFiles; i++) {
-                files[i].delete();
+        long totalSize = Arrays.stream(files).mapToLong(File::length).sum();
+        for (File file : files) {
+            if (fileCount <= maxFiles && totalSize <= maxTotalSize) {
+                break;
+            }
+            long size = file.length();
+            try {
+                Files.delete(file.toPath());
+                fileCount--;
+                totalSize -= size;
+            } catch (IOException e) {
+                log.warn("Unable to delete diagnostic archive {}", file, e);
             }
         }
     }

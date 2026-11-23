@@ -28,7 +28,12 @@ import org.wso2.diagnostics.utils.FileUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -40,9 +45,13 @@ import static org.wso2.diagnostics.utils.Constants.SFTP_UPLOAD_ENABLED;
  */
 public class ZipFileExecutor {
 
+    private static final Object ARCHIVE_LOCK = new Object();
+    private static final Pattern SIZE_PATTERN = Pattern.compile("([0-9]+)\\s*(B|KB|MB|GB|TB)?");
+
     private final Logger log = LogManager.getLogger(ZipFileExecutor.class);
     private final String logDirPath;
     private final int maxFiles;
+    private final long maxTotalSize;
 
     public ZipFileExecutor() {
         String logDirRelativePath = ConfigMapHolder.getInstance().getConfigMap().
@@ -50,9 +59,29 @@ public class ZipFileExecutor {
         logDirPath = System.getProperty(Constants.APP_HOME) + File.separator + logDirRelativePath + File.separator;
         maxFiles = Integer.parseInt(ConfigMapHolder.getInstance().getConfigMap().
                 get(Constants.ZIP_EXECUTOR_MAX_COUNT).toString());
+        maxTotalSize = parseMaxTotalSize(ConfigMapHolder.getInstance().getConfigMap().
+                get(Constants.ZIP_EXECUTOR_MAX_TOTAL_SIZE));
         File logFolder = new File(logDirPath);
         if (!(logFolder.exists())) {
             logFolder.mkdir();
+        }
+    }
+
+    static long parseMaxTotalSize(Object value) {
+
+        if (value == null) {
+            return Long.MAX_VALUE;
+        }
+        Matcher matcher = SIZE_PATTERN.matcher(value.toString().trim().toUpperCase(Locale.ROOT));
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid " + Constants.ZIP_EXECUTOR_MAX_TOTAL_SIZE + ": " + value);
+        }
+        String unit = matcher.group(2);
+        int power = unit == null ? 0 : "BKMGT".indexOf(unit.charAt(0));
+        try {
+            return Math.multiplyExact(Long.parseLong(matcher.group(1)), 1L << (10 * power));
+        } catch (NumberFormatException | ArithmeticException e) {
+            throw new IllegalArgumentException("Invalid " + Constants.ZIP_EXECUTOR_MAX_TOTAL_SIZE + ": " + value, e);
         }
     }
 
@@ -66,31 +95,31 @@ public class ZipFileExecutor {
         File folder = new File(path);
         try {
             String zipFileName = ServerProcess.getNodeId() + "_" + folder.getName() + ".zip";
-            zipFolder(path, logDirPath + zipFileName);
-            log.info("Diagnosis Dumped in :" + logDirPath + zipFileName);
-            FileUtils.rotateFiles(new File(logDirPath), maxFiles);
-            executeUploader(logDirPath, zipFileName);
+            Path archive = Path.of(logDirPath, zipFileName);
+            Path temporaryArchive = Files.createTempFile(archive.getParent(), "diagnostics-", ".tmp");
+            try {
+                zipFolder(path, temporaryArchive);
+                synchronized (ARCHIVE_LOCK) {
+                    Files.move(temporaryArchive, archive, StandardCopyOption.REPLACE_EXISTING);
+                    log.info("Diagnosis Dumped in :" + archive);
+                    FileUtils.rotateFiles(archive.getParent().toFile(), maxFiles, maxTotalSize);
+                    if (Files.isRegularFile(archive)) {
+                        executeUploader(logDirPath, zipFileName);
+                    }
+                }
+            } finally {
+                Files.deleteIfExists(temporaryArchive);
+            }
         } catch (Exception e) {
             log.error("Unable to zip the file at " + path, e);
         }
     }
 
-    private void zipFolder(String srcFolder, String destZipFile) {
+    private void zipFolder(String srcFolder, Path destZipFile) throws Exception {
 
-        ZipOutputStream zip;
-        FileOutputStream fileWriter;
-        try {
-            fileWriter = new FileOutputStream(destZipFile); // set file output stream
-            zip = new ZipOutputStream(fileWriter);
-
+        try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(destZipFile))) {
             addFolderToZip("", srcFolder, zip);
-
-            zip.flush();
-            zip.close();
-        } catch (Exception e) {
-            log.error("Error occurred while zipping the folder", e);
         }
-
     }
 
     private void addFileToZip(String path, String srcFile, ZipOutputStream zip)
@@ -102,11 +131,12 @@ public class ZipFileExecutor {
         } else {
             byte[] buf = new byte[1024];
             int len;
-            FileInputStream in = new FileInputStream(srcFile);
-            zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
-            while ((len = in.read(buf)) > 0) {
-                zip.write(buf, 0, len);
-
+            try (FileInputStream in = new FileInputStream(srcFile)) {
+                zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
+                while ((len = in.read(buf)) > 0) {
+                    zip.write(buf, 0, len);
+                }
+                zip.closeEntry();
             }
         }
     }

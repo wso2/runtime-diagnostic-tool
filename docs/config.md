@@ -236,6 +236,7 @@ notify_interval = "300"
 | --- |---------------------------------------------------------------------------------------------------|
 | output_directory | Directory to store the zip files                                                                  |
 | max_count | Maximum number of zip files to maintain. When the count exceeds, the older files will be deleted. |
+| max_total_size | Optional combined size limit for retained ZIP archives. Specify a whole number in bytes, or use B, KB, MB, GB, or TB (powers of 1024). Omit this setting for count-only retention. |
 
 Given below is a sample configuration.
 
@@ -243,6 +244,7 @@ Given below is a sample configuration.
 [zip_file_configuration]
 output_directory = "data"
 max_count = "50"
+max_total_size = "2GB"
 ```
 
 #### FTP Configurations

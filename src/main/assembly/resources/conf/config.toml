@@ -84,6 +84,8 @@ notify_interval = "60"
 [zip_file_configuration]
 output_directory = "data"
 max_count = "20"
+# Optional combined size limit for retained ZIP archives.
+# max_total_size = "2GB"
 
 # Error regex patterns and diagnosis
 
