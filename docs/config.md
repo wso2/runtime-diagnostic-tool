@@ -165,14 +165,19 @@ action_executors = "ThreadDumper,MetricsSnapshot,ServerInfo"
 | --- |---------------------------------------------------------------------------------------|
 | enabled | Whether the watcher is enabled or not.                                                |
 | interval | The interval between each check in seconds.                                           |
+| trigger_levels | Comma-separated severity levels that can trigger diagnostics. Defaults to `ERROR,FATAL`. Use `ERROR,FATAL,WARN` to include warnings, or an empty string to disable log-triggered collection. |
 
 Given below is a sample configuration for the log_watcher.
 
 ```toml
 [log_watcher]
 enabled = "true"
-interval = "0.1" 
+interval = "0.1"
+trigger_levels = "ERROR,FATAL"
 ```
+
+The watcher reads the severity from the standard WSO2 log header. It retains entries across polls
+and dispatches a pending entry at the next log header or when a poll finds no additional data.
 
 ### Log error patterns
 

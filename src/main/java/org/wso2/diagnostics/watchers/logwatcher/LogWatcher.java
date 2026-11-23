@@ -16,137 +16,150 @@
  *  under the License.
  */
 
-package org.wso2.diagnostics.watchers.logwatcher;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+package org.wso2.diagnostics.watchers.logwatcher;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 public class LogWatcher extends Thread {
 
     private static final Logger log = LogManager.getLogger(LogWatcher.class);
+    private static final Set<String> DEFAULT_TRIGGER_LEVELS = Set.of("ERROR", "FATAL");
+    private static final int MAX_ENTRY_LENGTH = 1_000_000;
+    // API Manager can prefix the timestamp with tenant ID and application name.
+    private static final Pattern LOG_HEADER = Pattern.compile(
+            "^(?:TID:\\s*\\[[^\\]]*\\]\\s+\\[[^\\]]*\\]\\s+)?"
+                    + "\\[\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[.,]\\d{3}\\]\\s+([A-Z]+)\\s+\\{");
 
-    /**
-     * The file which will be tailed.
-     */
     private final File file;
-    /**
-     * The amount of time to wait for the file to be updated.
-     */
     private final long delay;
-    /**
-     * The interpreter to notify of events when tailing.
-     */
-    private final Interpreter interpreter;
+    private final BiConsumer<String, String> entryConsumer;
+    private final Set<String> triggerLevels;
+    private final StringBuilder entry = new StringBuilder();
+    private String firstLine;
+    private long lastObservedLength;
 
-    /**
-     * Creates a Tailer for the given file.
-     *
-     * @param filepath   the file to follow.
-     * @param interpreter   the TailerListener to use.
-     * @param delay      the delay between checks of the file for new content in seconds.
-     */
     public LogWatcher(String filepath, Interpreter interpreter, double delay) {
+        this(filepath, interpreter, delay, null);
+    }
 
+    public LogWatcher(String filepath, Interpreter interpreter, double delay, String triggerLevels) {
+        this(filepath, interpreter::interpret, delay, triggerLevels);
+    }
+
+    LogWatcher(String filepath, BiConsumer<String, String> entryConsumer, double delay, String triggerLevels) {
         this.file = new File(filepath);
         this.delay = Math.round(delay * 1000);
-        this.interpreter = interpreter;
+        this.entryConsumer = entryConsumer;
+        this.triggerLevels = triggerLevels == null ? DEFAULT_TRIGGER_LEVELS
+                : Arrays.stream(triggerLevels.split(","))
+                        .map(level -> level.trim().toUpperCase(Locale.ROOT))
+                        .filter(level -> !level.isEmpty())
+                        .collect(Collectors.toSet());
     }
 
+    @Override
     public void run() {
+        RandomAccessFile reader = null;
         try {
-
-            RandomAccessFile reader = null;
-            long position = 0;
-            StringBuilder logBuilder = new StringBuilder(); // To accumulate log lines
-            while (reader == null) {
+            while (!isInterrupted()) {
                 try {
-                    reader = new RandomAccessFile(file, "r");
-                    log.info("Initiating LogWatcher for file: " + file.getPath());
-                    position = file.length();
-                    reader.seek(position);
-                } catch (FileNotFoundException e) {
-                    // ignoring this exception as the file may not be created yet
-                    log.debug("Log file " + file.getPath() + " not found.");
-                    Thread.sleep(delay);
-                }
-            }
-            while (true) {
-                long fileLength = file.length();
-                if (fileLength < position) {
-                    // File was rotated
-                    log.info("Log file has been rotated. Reopening the file " + file.getPath());
-                    // Reopen the reader after rotation
-                    try {
-                        // Ensure that the old file is closed
-                        closeQuietly(reader);
+                    if (reader == null) {
                         reader = new RandomAccessFile(file, "r");
-                        readLines(reader, logBuilder);
-                        position = 0;
-                    } catch (FileNotFoundException e) {
-                        log.error("Log file " + file.getPath() + " not found." , e);
-                        // sleep to avoid CPU spinning
-                        Thread.sleep(delay);
+                        lastObservedLength = reader.length();
+                        reader.seek(lastObservedLength);
+                        log.info("Initiating LogWatcher for file: {}", file);
                     }
-                    continue;
+                    long fileLength = file.length();
+                    reader = reopenIfTruncated(reader, fileLength);
+                    if (fileLength > reader.getFilePointer()) {
+                        readLines(reader);
+                    } else {
+                        finishEntry();
+                    }
+                } catch (FileNotFoundException e) {
+                    log.debug("Log file {} is unavailable.", file);
                 }
-                // Check if the file has been updated
-                if (fileLength > position) {
-                    readLines(reader, logBuilder);
-                    // Update the file length
-                    position = fileLength;
-                    // Move the file pointer to the end
-                    reader.seek(fileLength);
-                }
-                // Sleep for a short duration before checking for updates again
                 Thread.sleep(delay);
             }
-        } catch (IOException | InterruptedException e) {
-            log.error("Error while tailing the log file: " + file.getPath(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            log.error("Error while tailing the log file: {}", file, e);
+        } finally {
+            closeReader(reader);
         }
     }
 
-    private void closeQuietly(Closeable closeable) {
+    RandomAccessFile reopenIfTruncated(RandomAccessFile reader, long fileLength) throws IOException {
+        if (fileLength < lastObservedLength) {
+            finishEntry();
+            RandomAccessFile replacement = new RandomAccessFile(file, "r");
+            closeReader(reader);
+            reader = replacement;
+            log.info("Log file has been rotated. Reopening {}", file);
+        }
+        lastObservedLength = fileLength;
+        return reader;
+    }
 
-        try {
-            if (closeable != null) {
-                closeable.close();
+    private void closeReader(RandomAccessFile reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                log.error("Unable to close the log file: {}", file, e);
             }
-        } catch (IOException ioe) {
-            log.error("unable to close the file: " + file.getPath(), ioe);
         }
     }
 
-    private void readLines(RandomAccessFile reader, StringBuilder logBuilder) throws IOException {
+    void readLines(RandomAccessFile reader) throws IOException {
+        while (true) {
+            long lineStart = reader.getFilePointer();
+            String line = reader.readLine();
+            if (line == null) {
+                return;
+            }
+            // readLine converts one byte per character and excludes the line terminator.
+            if (reader.getFilePointer() - lineStart == line.length()) {
+                reader.seek(lineStart);
+                return;
+            }
 
-        // Read the new lines
-        String line;
-        String errorLine = "";
-        while ((line = reader.readLine()) != null) {
-            // Check if the line indicates the start of a stack trace
-            if (line.contains("ERROR") || line.contains("WARN")) {
-                if (logBuilder.length() == 0) {
-                    errorLine = line;
-                    logBuilder.append(line).append("\n");
-                } else {
-                    interpreter.interpret(errorLine, logBuilder.toString());
-                    logBuilder.setLength(0);
-                    errorLine = line;
-                    logBuilder.append(line).append("\n");
+            Matcher header = LOG_HEADER.matcher(line);
+            if (header.find()) {
+                finishEntry();
+                if (triggerLevels.contains(header.group(1))) {
+                    firstLine = line;
                 }
-            } else {
-                logBuilder.append(line).append("\n");
             }
-            // If the logBuilder exceeds a threshold, interpret the log lines and clear the logBuilder
-            if (logBuilder.length() > 1000000) {
-                interpreter.interpret(errorLine, logBuilder.toString());
-                logBuilder.setLength(0);
+            if (firstLine != null) {
+                entry.append(line).append('\n');
+                if (entry.length() > MAX_ENTRY_LENGTH) {
+                    finishEntry();
+                }
             }
+        }
+    }
+
+    void finishEntry() {
+        if (firstLine != null) {
+            entryConsumer.accept(firstLine, entry.toString());
+            firstLine = null;
+            entry.setLength(0);
         }
     }
 }

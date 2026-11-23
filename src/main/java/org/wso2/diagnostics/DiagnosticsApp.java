@@ -96,7 +96,8 @@ public class DiagnosticsApp {
                 double logWatcherInterval = Double.parseDouble(configMap.get(LOG_WATCHER_INTERVAL).toString());
                 LogWatcher carbonLogTailor = new LogWatcher(appHome +
                         configMap.get(Constants.LOG_FILE_CONFIGURATION_FILE_PATH),
-                        new Interpreter(actionExecutorMap, regexMap, regexPatternReloadTime), logWatcherInterval);
+                        new Interpreter(actionExecutorMap, regexMap, regexPatternReloadTime), logWatcherInterval,
+                        (String) configMap.get(Constants.LOG_WATCHER_TRIGGER_LEVELS));
                 log.info("Listening to : " + configMap.get(Constants.LOG_FILE_CONFIGURATION_FILE_PATH));
                 carbonLogTailor.start();
             }

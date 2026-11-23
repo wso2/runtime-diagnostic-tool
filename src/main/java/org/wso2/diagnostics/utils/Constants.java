@@ -47,6 +47,7 @@ public class Constants {
     // log_watcher constants
     public static final String LOG_WATCHER_ENABLED = "log_watcher.enabled";
     public static final String LOG_WATCHER_INTERVAL = "log_watcher.interval";
+    public static final String LOG_WATCHER_TRIGGER_LEVELS = "log_watcher.trigger_levels";
 
     // LogWatcher constants
     public static final String CUSTOM_WATCHERS = "custom_watchers";

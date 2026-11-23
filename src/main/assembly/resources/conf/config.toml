@@ -58,6 +58,7 @@ action_executors = "ThreadDumper,MetricsSnapshot,ServerInfo"
 [log_watcher]
 enabled = "true"
 interval = "0.1"
+trigger_levels = "ERROR,FATAL"
 
 # Custom Watcher Configurations
 [[custom_watchers]]
