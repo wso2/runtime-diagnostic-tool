@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wso2.diagnostics.utils.CommonUtils;
 import org.wso2.diagnostics.utils.ConfigMapHolder;
 import org.wso2.diagnostics.utils.Constants;
 import org.wso2.diagnostics.utils.FileUtils;
@@ -30,11 +31,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class ServerInfo implements ActionExecutor {
 
     private static final Logger log = LogManager.getLogger(ServerInfo.class);
+    private static final Set<String> ACTIVE_LOG_NAMES = Set.of("wso2carbon.log", "wso2error.log",
+            "wso2carbon-trace-messages.log", "audit.log", "http_access.log", "correlation.log", "patches.log",
+            "wso2-mi-open-telemetry.log", "wso2-mi-service.log", "wso2-mi-api.log",
+            "api.log", "wso2-apigw-errors.log", "wso2-apigw-service.log");
     private Map<String, Object> configuration;
 
     public ServerInfo() {
@@ -100,9 +107,23 @@ public class ServerInfo implements ActionExecutor {
     private void copyLogsFolder(String folderpath) {
         String logsFolder = System.getProperty(Constants.APP_HOME) + File.separator +
                 configuration.get(Constants.LOGS_DIRECTORY);
-        File file = new File(logsFolder);
-        if (file.exists()) {
-            FileUtils.zipFolder(logsFolder, folderpath + "/logs.zip");
+        File logsDirectory = new File(logsFolder);
+        if (logsDirectory.isDirectory()) {
+            boolean excludeHeapDumps = CommonUtils.getBooleanValue(
+                    configuration.get(Constants.SERVER_INFO_EXCLUDE_HEAP_DUMPS), true);
+            boolean includeRotatedLogs = CommonUtils.getBooleanValue(
+                    configuration.get(Constants.SERVER_INFO_INCLUDE_ROTATED_LOGS), false);
+            FileUtils.zipFolder(logsFolder, folderpath + "/logs.zip", file -> {
+                if (file.isDirectory()) {
+                    return includeRotatedLogs || !excludeHeapDumps;
+                }
+                String name = file.getName();
+                if (name.toLowerCase(Locale.ROOT).endsWith(".hprof")) {
+                    return !excludeHeapDumps;
+                }
+                return includeRotatedLogs
+                        || (logsDirectory.equals(file.getParentFile()) && ACTIVE_LOG_NAMES.contains(name));
+            });
         }
     }
 

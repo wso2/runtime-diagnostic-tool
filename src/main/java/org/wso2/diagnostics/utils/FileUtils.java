@@ -31,6 +31,7 @@ import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -68,17 +69,16 @@ public class FileUtils {
      * @param destZipFile destination path of zip folder.
      */
     public static void zipFolder(String srcFolder, String destZipFile) {
+        zipFolder(srcFolder, destZipFile, file -> true);
+    }
 
-        ZipOutputStream zip;
-        FileOutputStream fileWriter;
-        try {
-            fileWriter = new FileOutputStream(destZipFile); // set file output stream
-            zip = new ZipOutputStream(fileWriter);
-
-            addFolderToZip("", srcFolder, zip);
-
-            zip.flush();
-            zip.close();
+    /**
+     * Zip the selected files, descending only into directories accepted by the filter.
+     */
+    public static void zipFolder(String srcFolder, String destZipFile, Predicate<File> includeEntry) {
+        File source = new File(srcFolder);
+        try (ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(destZipFile))) {
+            addFolderToZip(source.getName(), source, zip, includeEntry);
         } catch (Exception e) {
             log.error("Error while zipping the folder", e);
         }
@@ -109,49 +109,25 @@ public class FileUtils {
         return folderPath;
     }
 
-    /**
-     * Method used to zip file.
-     *
-     * @param path    destination path of the file
-     * @param srcFile source path of the file which need to zip
-     * @param zip     ZipOutputStream
-     * @throws Exception
-     */
-    private static void addFileToZip(String path, String srcFile, ZipOutputStream zip)
-            throws Exception {
-
-        File folder = new File(srcFile);
-        if (folder.isDirectory()) {
-            addFolderToZip(path, srcFile, zip); // if current file is directory do zip folder.
-        } else {
-            byte[] buf = new byte[1024];
-            int len;
-            FileInputStream in = new FileInputStream(srcFile);
-            zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
-            while ((len = in.read(buf)) > 0) {
-                zip.write(buf, 0, len);
-            }
+    private static void addFolderToZip(String path, File folder, ZipOutputStream zip, Predicate<File> includeEntry)
+            throws IOException {
+        File[] children = folder.listFiles();
+        if (children == null) {
+            throw new IOException("Unable to list files in " + folder);
         }
-    }
-
-    /**
-     * Mehtod used to zip folder.
-     *
-     * @param path      destination  path of the folder.
-     * @param srcFolder source path of the folder.
-     * @param zip       ZipOutputStream
-     * @throws Exception throw exception to parent method
-     */
-    private static void addFolderToZip(String path, String srcFolder, ZipOutputStream zip)
-            throws Exception {
-
-        File folder = new File(srcFolder);
-
-        for (String fileName : folder.list()) {
-            if (path.equals("")) {
-                addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
-            } else {
-                addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
+        for (File child : children) {
+            if (!includeEntry.test(child)) {
+                continue;
+            }
+            String entryPath = path + "/" + child.getName();
+            if (child.isDirectory()) {
+                addFolderToZip(entryPath, child, zip, includeEntry);
+            } else if (child.isFile()) {
+                try (FileInputStream input = new FileInputStream(child)) {
+                    zip.putNextEntry(new ZipEntry(entryPath));
+                    input.transferTo(zip);
+                    zip.closeEntry();
+                }
             }
         }
     }

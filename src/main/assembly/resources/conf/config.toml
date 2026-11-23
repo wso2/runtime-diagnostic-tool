@@ -10,6 +10,10 @@ process_id_path = "../wso2carbon.pid"
 #server_name = "WSO2 Server"
 #server_version = "1.0.0"
 
+[server_info]
+exclude_heap_dumps = true
+include_rotated_logs = false
+
 
 ## Action Executor Configurations
 

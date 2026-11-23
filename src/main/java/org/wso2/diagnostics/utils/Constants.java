@@ -60,6 +60,8 @@ public class Constants {
     public static final String DIAGNOSTIC_TOOL_ENABLED = "server_configuration.diagnostic_tool_enabled";
     public static final String DEPLOYMENT_TOML_PATH = "server_configuration.deployment_toml_path";
     public static final String LOGS_DIRECTORY = "server_configuration.logs_directory";
+    public static final String SERVER_INFO_EXCLUDE_HEAP_DUMPS = "server_info.exclude_heap_dumps";
+    public static final String SERVER_INFO_INCLUDE_ROTATED_LOGS = "server_info.include_rotated_logs";
     public static final String UPDATES_CONFIG_PATH = "server_configuration.updates_config_path";
     public static final String DIAGNOSTIC_LOG_FILE_PATH = "server_configuration.diagnostic_log_file_path";
     public static final String PROCESS_ID_PATH = "server_configuration.process_id_path";
