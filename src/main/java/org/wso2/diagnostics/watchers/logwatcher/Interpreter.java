@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.wso2.diagnostics.actionexecutor.ActionExecutor;
 import org.wso2.diagnostics.postexecutor.PostExecutorTask;
 import org.wso2.diagnostics.utils.Constants;
+import org.wso2.diagnostics.utils.FileUtils;
 
 import java.io.File;
 import java.sql.Timestamp;
@@ -70,10 +71,13 @@ public class Interpreter {
      * @param completeLog complete log
      */
     private void diagnoseError(String errorLine, String completeLog) {
-        this.createFolder();
         String regexPattern = findRegexPattern(errorLine);
-        String[] executorsList = regexMap.get(regexPattern);
-        if (executorsList != null && this.doAnalysis(executorsList, errorLine, regexPattern)) {
+        String[] executorsList = regexPattern == null ? null : regexMap.get(regexPattern);
+        if (executorsList == null || !FileUtils.hasEnoughDiskSpaceForDump()) {
+            return;
+        }
+        this.createFolder();
+        if (this.doAnalysis(executorsList, errorLine, regexPattern)) {
             try {
                 timer.schedule(new PostExecutorTask(completeLog, folderPath), new Date(new Date().getTime() + 5000));
             } catch (Exception e) {

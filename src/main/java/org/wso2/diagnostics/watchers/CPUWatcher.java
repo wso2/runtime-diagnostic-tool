@@ -64,6 +64,11 @@ public class CPUWatcher extends Thread {
         }
 
         if (count > retryCount) {
+            if (!FileUtils.hasEnoughDiskSpaceForDump()) {
+                count = 0;
+                lastCountUpdatedTime = System.currentTimeMillis();
+                return;
+            }
             log.debug("CPU usage is consistently above threshold. Executing CPU watcher actions.");
             String tempFolderPath = FileUtils.createTimeStampFolder();
             String[] actionExecutors = CommonUtils.getActionExecutors("cpu_watcher");

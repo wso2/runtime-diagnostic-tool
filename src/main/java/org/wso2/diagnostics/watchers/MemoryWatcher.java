@@ -63,6 +63,11 @@ public class MemoryWatcher extends Thread {
             log.info("Heap usage is above threshold. Heap usage: " + memoryUsage + "%, Retry count: " + count);
         }
         if (count > retryCount) {
+            if (!FileUtils.hasEnoughDiskSpaceForDump()) {
+                count = 0;
+                lastCountUpdatedTime = System.currentTimeMillis();
+                return;
+            }
             log.debug("Memory usage is consistently above threshold. Executing memory watcher actions.");
             String tempFolderPath = FileUtils.createTimeStampFolder();
             String[] actionExecutors = CommonUtils.getActionExecutors("memory_watcher");

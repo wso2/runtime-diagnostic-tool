@@ -45,12 +45,10 @@ public class ZipFileExecutor {
     private final int maxFiles;
 
     public ZipFileExecutor() {
-        String logDirRelativePath = ConfigMapHolder.getInstance().getConfigMap().
-                get(Constants.ZIP_EXECUTOR_OUTPUT_DIRECTORY).toString();
-        logDirPath = System.getProperty(Constants.APP_HOME) + File.separator + logDirRelativePath + File.separator;
+        File logFolder = FileUtils.getDiagnosticOutputDirectory();
+        logDirPath = logFolder.getPath() + File.separator;
         maxFiles = Integer.parseInt(ConfigMapHolder.getInstance().getConfigMap().
                 get(Constants.ZIP_EXECUTOR_MAX_COUNT).toString());
-        File logFolder = new File(logDirPath);
         if (!(logFolder.exists())) {
             logFolder.mkdir();
         }

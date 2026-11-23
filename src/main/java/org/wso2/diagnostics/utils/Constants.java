@@ -54,6 +54,7 @@ public class Constants {
 
     // ZipExecutor constants
     public static final String ZIP_EXECUTOR_OUTPUT_DIRECTORY = "zip_file_configuration.output_directory";
+    public static final String ZIP_EXECUTOR_MIN_FREE_DISK_SPACE = "zip_file_configuration.min_free_disk_space";
     public static final String ZIP_EXECUTOR_MAX_COUNT = "zip_file_configuration.max_count";
 
     // ServerInfo constants

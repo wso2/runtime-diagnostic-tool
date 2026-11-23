@@ -236,6 +236,7 @@ notify_interval = "300"
 | --- |---------------------------------------------------------------------------------------------------|
 | output_directory | Directory to store the zip files                                                                  |
 | max_count | Maximum number of zip files to maintain. When the count exceeds, the older files will be deleted. |
+| min_free_disk_space | Optional minimum usable space on the diagnostic output volume before collection. Use a whole number in bytes or append B, KB, MB, GB, or TB (powers of 1024). Omit it or set it to zero to disable the check. When the check fails or the value is invalid, the tool logs a warning and skips the dump. |
 
 Given below is a sample configuration.
 
@@ -243,6 +244,7 @@ Given below is a sample configuration.
 [zip_file_configuration]
 output_directory = "data"
 max_count = "50"
+min_free_disk_space = "5GB"
 ```
 
 #### FTP Configurations

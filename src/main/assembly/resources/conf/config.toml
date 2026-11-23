@@ -84,6 +84,8 @@ notify_interval = "60"
 [zip_file_configuration]
 output_directory = "data"
 max_count = "20"
+# Optional minimum usable space on the output volume before collecting a diagnostic dump.
+# min_free_disk_space = "5GB"
 
 # Error regex patterns and diagnosis
 

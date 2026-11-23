@@ -26,17 +26,68 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class FileUtils {
 
     private static final Logger log = LogManager.getLogger(FileUtils.class);
+    private static final Pattern DISK_SPACE_PATTERN = Pattern.compile("([0-9]+)\\s*(B|KB|MB|GB|TB)?");
+
+    public static File getDiagnosticOutputDirectory() {
+        String directory = ConfigMapHolder.getInstance().getConfigMap().
+                get(Constants.ZIP_EXECUTOR_OUTPUT_DIRECTORY).toString();
+        return new File(System.getProperty(Constants.APP_HOME) + File.separator + directory);
+    }
+
+    public static boolean hasEnoughDiskSpaceForDump() {
+        Object configuredMinimum = ConfigMapHolder.getInstance().getConfigMap().
+                get(Constants.ZIP_EXECUTOR_MIN_FREE_DISK_SPACE);
+        if (configuredMinimum == null) {
+            return true;
+        }
+        try {
+            long minimum = parseMinimumDiskSpace(configuredMinimum.toString());
+            if (minimum == 0) {
+                return true;
+            }
+            Path outputDirectory = getDiagnosticOutputDirectory().toPath();
+            if (!Files.isDirectory(outputDirectory)) {
+                Files.createDirectories(outputDirectory);
+            }
+            long usableSpace = Files.getFileStore(outputDirectory).getUsableSpace();
+            if (usableSpace >= minimum) {
+                return true;
+            }
+            log.warn("Skipping diagnostic dump: {} has {} usable bytes, below the configured minimum of {} bytes.",
+                    outputDirectory, usableSpace, minimum);
+        } catch (IllegalArgumentException | ArithmeticException e) {
+            log.warn("Skipping diagnostic dump: invalid {} value '{}'.",
+                    Constants.ZIP_EXECUTOR_MIN_FREE_DISK_SPACE, configuredMinimum);
+        } catch (IOException | SecurityException e) {
+            log.warn("Skipping diagnostic dump: unable to check usable space on the diagnostic output volume.", e);
+        }
+        return false;
+    }
+
+    private static long parseMinimumDiskSpace(String value) {
+        Matcher matcher = DISK_SPACE_PATTERN.matcher(value.trim().toUpperCase(Locale.ROOT));
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Expected a whole number with an optional B, KB, MB, GB or TB unit");
+        }
+        String unit = matcher.group(2);
+        int power = unit == null ? 0 : "BKMGT".indexOf(unit.charAt(0));
+        return Math.multiplyExact(Long.parseLong(matcher.group(1)), 1L << (10 * power));
+    }
 
     public static void writeToFile(String filePath, String content) {
         // create the file if it does not exist
